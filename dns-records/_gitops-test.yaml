@@ -7,6 +7,11 @@ metadata:
     simardeep.xyz/owner: "platform"
 spec:
   endpoints:
+    - dnsName: gitops-test-a.simardeep.xyz
+      recordType: A
+      recordTTL: 300
+      targets:
+        - 203.0.113.10
     - dnsName: _gitops-test.simardeep.xyz
       recordType: TXT
       recordTTL: 300
