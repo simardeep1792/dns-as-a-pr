@@ -3,6 +3,9 @@ kind: Application
 metadata:
   name: dns-records
   namespace: argocd
+  annotations:
+    # Apply DNSEndpoint resources after ExternalDNS installs the CRD.
+    argocd.argoproj.io/sync-wave: "1"
 spec:
   project: default
   source:

@@ -6,7 +6,7 @@ ArgoCD is installed once manually. After that, ArgoCD manages all Kubernetes res
 
 ```bash
 gcloud container clusters get-credentials dns-as-a-pr \
-  --zone northamerica-northeast1-a \
+  --region northamerica-northeast1 \
   --project edip-aurora-fgc
 ```
 

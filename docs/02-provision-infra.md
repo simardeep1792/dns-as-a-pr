@@ -2,10 +2,14 @@
 
 This provisions:
 
-1. GKE Autopilot cluster `dns-as-a-pr` (zonal `northamerica-northeast1-a`)
+1. GKE Autopilot cluster `dns-as-a-pr` (regional `northamerica-northeast1`)
 2. Subnet `dns-as-a-pr-subnet` in existing VPC `gke-vpc-network`
 3. Cloud DNS public zone `simardeep.xyz`
 4. IAM + Workload Identity bindings for ExternalDNS
+
+## Note on Location
+
+GKE Autopilot clusters are regional. This cluster is in `northamerica-northeast1`.
 
 ## Apply
 
@@ -28,7 +32,6 @@ Service accounts (used by Kubernetes ServiceAccounts via Workload Identity):
 
 ```bash
 tofu output external_dns_gsa_email
-tofu output cert_manager_gsa_email
 ```
 
 ## If Apply Fails

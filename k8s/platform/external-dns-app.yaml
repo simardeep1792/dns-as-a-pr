@@ -3,6 +3,9 @@ kind: Application
 metadata:
   name: external-dns
   namespace: argocd
+  annotations:
+    # Ensure the DNSEndpoint CRD is installed before dns-records syncs.
+    argocd.argoproj.io/sync-wave: "0"
 spec:
   project: default
   source:
@@ -14,7 +17,8 @@ spec:
         provider: google
         sources:
           - crd
-        policy: sync
+        # Safer default for a PR-driven registry: don’t delete records on drift.
+        policy: upsert-only
         domainFilters:
           - simardeep.xyz
         txtOwnerId: simardeep-xyz
@@ -28,7 +32,7 @@ spec:
           - --namespace=dns
           - --crd-source-apiversion=externaldns.k8s.io/v1alpha1
           - --crd-source-kind=DNSEndpoint
-          - --managed-record-types=A,AAAA,CNAME,TXT,MX
+          - --managed-record-types=A,AAAA,CNAME,TXT,MX,NS
           - --txt-prefix=_externaldns.
           - --google-project=edip-aurora-fgc
         rbac:

@@ -10,12 +10,6 @@ variable "region" {
   default     = "northamerica-northeast1"
 }
 
-variable "zone" {
-  type        = string
-  description = "GCP zone."
-  default     = "northamerica-northeast1-a"
-}
-
 variable "authorized_cidr" {
   type        = string
   description = "CIDR allowed to access the GKE control plane public endpoint (e.g. 203.0.113.4/32)."
