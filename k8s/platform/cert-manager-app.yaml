@@ -18,6 +18,10 @@ spec:
           leaderElection:
             namespace: cert-manager
 
+        # Ensure all cert-manager components avoid kube-system for leader election (GKE Autopilot restriction).
+        extraArgs:
+          - --leader-election-namespace=cert-manager
+
         serviceAccount:
           create: true
           name: cert-manager
@@ -28,15 +32,23 @@ spec:
             cpu: 50m
             memory: 128Mi
         webhook:
+          extraArgs:
+            - --leader-election-namespace=cert-manager
           resources:
             requests:
               cpu: 25m
               memory: 64Mi
         cainjector:
+          extraArgs:
+            - --leader-election-namespace=cert-manager
           resources:
             requests:
               cpu: 25m
               memory: 64Mi
+
+        startupapicheck:
+          extraArgs:
+            - --leader-election-namespace=cert-manager
   destination:
     server: https://kubernetes.default.svc
     namespace: cert-manager
