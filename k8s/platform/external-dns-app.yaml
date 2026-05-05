@@ -17,9 +17,7 @@ spec:
         policy: sync
         domainFilters:
           - simardeep.xyz
-        registry: txt
         txtOwnerId: simardeep-xyz
-        txtPrefix: _externaldns.
         logLevel: info
         serviceAccount:
           create: true
