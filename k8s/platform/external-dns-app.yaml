@@ -18,7 +18,7 @@ spec:
         domainFilters:
           - simardeep.xyz
         txtOwnerId: simardeep-xyz
-        logLevel: debug
+        logLevel: info
         serviceAccount:
           create: true
           name: external-dns
