@@ -37,7 +37,7 @@ jobs:
           kubeconform \
             -strict \
             -schema-location default \
-            -schema-location "file://$(pwd)/schemas" \
+            -schema-location "file://$(pwd)/schemas/{{ .ResourceAPIVersion }}-{{ .ResourceKind }}.json" \
             dns-records
 
       - name: Policy checks (Conftest / OPA)
