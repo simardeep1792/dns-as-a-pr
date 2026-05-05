@@ -31,7 +31,6 @@ spec:
           - --managed-record-types=A,AAAA,CNAME,NS,TXT,MX
           - --txt-prefix=_externaldns.
           - --google-project=edip-aurora-fgc
-          - --google-zone=simardeep-xyz
         rbac:
           create: true
         resources:
