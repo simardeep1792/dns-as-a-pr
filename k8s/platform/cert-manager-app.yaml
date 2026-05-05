@@ -12,6 +12,12 @@ spec:
     helm:
       values: |
         installCRDs: true
+
+        # GKE Autopilot restricts writes to kube-system. cert-manager defaults leader election there.
+        global:
+          leaderElection:
+            namespace: cert-manager
+
         serviceAccount:
           create: true
           name: cert-manager
