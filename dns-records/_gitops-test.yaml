@@ -9,6 +9,6 @@ spec:
   endpoints:
     - dnsName: _gitops-test.simardeep.xyz
       recordType: TXT
-      ttl: 300
+      recordTTL: 300
       targets:
         - "dns-as-pr-works"
