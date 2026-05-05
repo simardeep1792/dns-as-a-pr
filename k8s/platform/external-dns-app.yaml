@@ -29,6 +29,7 @@ spec:
           - --crd-source-apiversion=externaldns.k8s.io/v1alpha1
           - --crd-source-kind=DNSEndpoint
           - --managed-record-types=A,AAAA,CNAME,NS,TXT,MX
+          - --txt-prefix=_externaldns.
           - --google-project=edip-aurora-fgc
         rbac:
           create: true
