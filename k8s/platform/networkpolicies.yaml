@@ -20,6 +20,15 @@ spec:
         - protocol: TCP
           port: 53
     - to:
+        # NodeLocal DNSCache (common on GKE): allow DNS to link-local cache.
+        - ipBlock:
+            cidr: 169.254.20.10/32
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    - to:
         - ipBlock:
             cidr: 0.0.0.0/0
       ports:
@@ -48,6 +57,14 @@ spec:
           podSelector:
             matchLabels:
               k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    - to:
+        - ipBlock:
+            cidr: 169.254.20.10/32
       ports:
         - protocol: UDP
           port: 53
