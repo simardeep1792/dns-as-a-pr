@@ -1,0 +1,14 @@
+apiVersion: externaldns.k8s.io/v1alpha1
+kind: DNSEndpoint
+metadata:
+  name: test-simardeep-xyz
+  namespace: dns
+  labels:
+    simardeep.xyz/owner: "platform-test"
+spec:
+  endpoints:
+    - dnsName: test.simardeep.xyz
+      recordType: TXT
+      ttl: 300
+      targets:
+        - "dns-as-pr-works"
