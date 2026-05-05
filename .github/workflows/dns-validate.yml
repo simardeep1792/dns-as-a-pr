@@ -40,4 +40,4 @@ jobs:
 
       - name: Policy checks (Conftest / OPA)
         run: |
-          conftest test -p policies/dns dns-records
+          conftest test -p policies/dns --all-namespaces dns-records
