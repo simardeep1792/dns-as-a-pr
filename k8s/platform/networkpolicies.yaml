@@ -77,6 +77,15 @@ spec:
         - protocol: TCP
           port: 443
     - to:
+        # Practical DNS allowance: some GKE paths (NodeLocal DNS) are node-level.
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    - to:
         - ipBlock:
             cidr: 169.254.169.254/32
       ports:
