@@ -17,7 +17,9 @@ spec:
         policy: sync
         domainFilters:
           - simardeep.xyz
+        registry: txt
         txtOwnerId: simardeep-xyz
+        txtPrefix: _externaldns.
         logLevel: info
         serviceAccount:
           create: true
@@ -29,8 +31,6 @@ spec:
           - --crd-source-apiversion=externaldns.k8s.io/v1alpha1
           - --crd-source-kind=DNSEndpoint
           - --managed-record-types=A,AAAA,CNAME,NS,TXT,MX
-          - --registry=txt
-          - --txt-prefix=_externaldns.
           - --google-project=edip-aurora-fgc
         rbac:
           create: true
