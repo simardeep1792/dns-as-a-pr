@@ -1,0 +1,48 @@
+{
+  "$schema": "http://json-schema.org/schema#",
+  "title": "DNSEndpoint",
+  "type": "object",
+  "required": ["apiVersion", "kind", "metadata", "spec"],
+  "properties": {
+    "apiVersion": {"type": "string", "enum": ["externaldns.k8s.io/v1alpha1"]},
+    "kind": {"type": "string", "enum": ["DNSEndpoint"]},
+    "metadata": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": {"type": "string"},
+        "namespace": {"type": "string"},
+        "labels": {"type": "object"}
+      },
+      "additionalProperties": true
+    },
+    "spec": {
+      "type": "object",
+      "required": ["endpoints"],
+      "properties": {
+        "endpoints": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["dnsName", "recordType", "targets"],
+            "properties": {
+              "dnsName": {"type": "string"},
+              "recordType": {"type": "string"},
+              "recordTTL": {"type": "integer"},
+              "ttl": {"type": "integer"},
+              "targets": {
+                "type": "array",
+                "minItems": 1,
+                "items": {"type": "string"}
+              }
+            },
+            "additionalProperties": true
+          }
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

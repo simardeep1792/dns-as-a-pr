@@ -1,0 +1,17 @@
+apiVersion: externaldns.k8s.io/v1alpha1
+kind: DNSEndpoint
+metadata:
+  name: project-simardeep-xyz
+  namespace: dns
+  labels:
+    simardeep.xyz/owner: "example"
+spec:
+  endpoints:
+    - dnsName: project.simardeep.xyz
+      recordType: NS
+      ttl: 300
+      targets:
+        - ns-cloud-a1.googledomains.com.
+        - ns-cloud-a2.googledomains.com.
+        - ns-cloud-a3.googledomains.com.
+        - ns-cloud-a4.googledomains.com.

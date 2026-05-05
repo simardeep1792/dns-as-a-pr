@@ -1,0 +1,16 @@
+apiVersion: externaldns.k8s.io/v1alpha1
+kind: DNSEndpoint
+metadata:
+  # Unique name within the dns namespace.
+  name: <subdomain>-simardeep-xyz
+  namespace: dns
+  labels:
+    # Optional: helps humans find who owns this record.
+    simardeep.xyz/owner: "<your-github-handle-or-team>"
+spec:
+  endpoints:
+    - dnsName: <subdomain>.simardeep.xyz
+      recordType: A
+      ttl: 300
+      targets:
+        - 203.0.113.10

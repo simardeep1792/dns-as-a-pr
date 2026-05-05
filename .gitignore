@@ -1,0 +1,10 @@
+.DS_Store
+
+# OpenTofu / Terraform
+**/.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+
+# Local kubeconfig artifacts
+*.kubeconfig

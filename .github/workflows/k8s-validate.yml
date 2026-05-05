@@ -1,0 +1,36 @@
+name: Kubernetes Manifests Validation
+
+on:
+  pull_request:
+    paths:
+      - "k8s/**"
+      - "schemas/**"
+      - ".yamllint.yml"
+
+jobs:
+  validate:
+    name: yamllint + kubeconform
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install tools (yamllint, kubeconform)
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install yamllint==1.35.1
+
+          curl -sSL -o /usr/local/bin/kubeconform https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64
+          chmod +x /usr/local/bin/kubeconform
+
+      - name: yamllint
+        run: |
+          yamllint -f parsable k8s
+
+      - name: kubeconform
+        run: |
+          kubeconform \
+            -strict \
+            -schema-location default \
+            -schema-location "file://$(pwd)/schemas" \
+            k8s

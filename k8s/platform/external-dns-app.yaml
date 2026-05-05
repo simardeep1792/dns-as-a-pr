@@ -1,0 +1,52 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: external-dns
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://kubernetes-sigs.github.io/external-dns/
+    chart: external-dns
+    targetRevision: 1.15.0
+    helm:
+      values: |
+        provider: google
+        sources:
+          - crd
+        policy: sync
+        domainFilters:
+          - simardeep.xyz
+        txtOwnerId: simardeep-xyz
+        logLevel: info
+        serviceAccount:
+          create: true
+          name: external-dns
+          annotations:
+            iam.gke.io/gcp-service-account: external-dns@edip-aurora-fgc.iam.gserviceaccount.com
+        extraArgs:
+          - --namespace=dns
+          - --crd-source-apiversion=externaldns.k8s.io/v1alpha1
+          - --crd-source-kind=DNSEndpoint
+          - --managed-record-types=A,AAAA,CNAME,NS,TXT,MX
+          - --registry=txt
+          - --txt-prefix=_externaldns.
+          - --google-project=edip-aurora-fgc
+        rbac:
+          create: true
+        resources:
+          requests:
+            cpu: 50m
+            memory: 128Mi
+          limits:
+            cpu: 200m
+            memory: 256Mi
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: external-dns
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
