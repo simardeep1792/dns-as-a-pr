@@ -17,13 +17,18 @@ jobs:
 
       - name: Install tools (yamllint, kubeconform, conftest)
         run: |
+          set -euo pipefail
+
           python3 -m pip install --upgrade pip
           python3 -m pip install yamllint==1.35.1
 
           # kubeconform ships as a tarball; download and extract the binary.
-          curl -sSfL https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz \
-            | tar -xz -C /usr/local/bin kubeconform
+          tmp_tgz="$(mktemp)"
+          curl -sSfL -o "$tmp_tgz" https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz
+          tar -tzf "$tmp_tgz" >/dev/null
+          tar -xzf "$tmp_tgz" -C /usr/local/bin kubeconform
           chmod +x /usr/local/bin/kubeconform
+          /usr/local/bin/kubeconform -v
 
           curl -sSL https://github.com/open-policy-agent/conftest/releases/download/v0.57.0/conftest_0.57.0_Linux_x86_64.tar.gz \
             | tar -xz -C /usr/local/bin conftest
