@@ -36,6 +36,5 @@ echo
 ```bash
 kubectl -n argocd get applications
 kubectl -n external-dns get pods
-kubectl -n cert-manager get pods
 kubectl -n dns get dnsendpoints.externaldns.k8s.io
 ```

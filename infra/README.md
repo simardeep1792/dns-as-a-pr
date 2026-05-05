@@ -2,7 +2,7 @@
 
 This directory provisions the DNS registry control plane:
 
-1. GKE Autopilot cluster (`dns-as-a-pr`) used only for ArgoCD + ExternalDNS (+ optional cert-manager).
+1. GKE Autopilot cluster (`dns-as-a-pr`) used only for ArgoCD + ExternalDNS.
 2. Cloud DNS public managed zone for `simardeep.xyz`.
 3. IAM + Workload Identity bindings so controllers authenticate without service account keys.
 

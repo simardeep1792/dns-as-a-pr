@@ -5,7 +5,7 @@ This provisions:
 1. GKE Autopilot cluster `dns-as-a-pr` (zonal `northamerica-northeast1-a`)
 2. Subnet `dns-as-a-pr-subnet` in existing VPC `gke-vpc-network`
 3. Cloud DNS public zone `simardeep.xyz`
-4. IAM + Workload Identity bindings for ExternalDNS and cert-manager
+4. IAM + Workload Identity bindings for ExternalDNS
 
 ## Apply
 

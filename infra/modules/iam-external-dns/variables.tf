@@ -25,9 +25,3 @@ variable "ksa_name" {
   description = "Kubernetes service account name for ExternalDNS."
   default     = "external-dns"
 }
-
-variable "condition_title" {
-  type        = string
-  description = "Title for the IAM Condition."
-  default     = "external-dns-zone-scoped"
-}

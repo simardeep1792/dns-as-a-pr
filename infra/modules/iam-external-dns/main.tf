@@ -11,17 +11,17 @@ resource "google_service_account_iam_member" "workload_identity" {
   member             = "serviceAccount:${var.project_id}.svc.id.goog[${var.ksa_namespace}/${var.ksa_name}]"
 }
 
-# Least-privilege intent:
-# - ExternalDNS needs to read the managed zone and submit record changes.
-# - We bind dns.admin with an IAM Condition limiting access to the specific managed zone.
-resource "google_project_iam_member" "dns_admin_zone_scoped" {
-  project = var.project_id
-  role    = "roles/dns.admin"
-  member  = "serviceAccount:${google_service_account.this.email}"
+resource "google_dns_managed_zone_iam_member" "dns_admin" {
+  project      = var.project_id
+  managed_zone = var.managed_zone_name
+  role         = "roles/dns.admin"
+  member       = "serviceAccount:${google_service_account.this.email}"
+}
 
-  condition {
-    title       = var.condition_title
-    description = "Limit Cloud DNS permissions to managed zone ${var.managed_zone_name}."
-    expression  = "resource.name.startsWith('projects/${var.project_id}/managedZones/${var.managed_zone_name}')"
-  }
+# Required because the Cloud DNS managedZones.list API call is project-scoped and cannot be restricted to a single zone.
+# This is not a workaround; ExternalDNS must list zones to discover which managed zone matches its domain filters.
+resource "google_project_iam_member" "dns_reader" {
+  project = var.project_id
+  role    = "roles/dns.reader"
+  member  = "serviceAccount:${google_service_account.this.email}"
 }

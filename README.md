@@ -15,7 +15,6 @@ ArgoCD syncs the declared DNS records into a dedicated GKE control-plane cluster
   GKE Autopilot (dns-as-a-pr)
     - ArgoCD
     - ExternalDNS (source=crd)
-    - cert-manager (optional service)
         |
         | 3) ExternalDNS calls Cloud DNS API (Workload Identity)
         v
@@ -31,10 +30,9 @@ ArgoCD syncs the declared DNS records into a dedicated GKE control-plane cluster
 |---|---|---|---|
 | Argo CD | CNCF GitOps controller | Applies Kubernetes manifests from Git and keeps them reconciled | https://argo-cd.readthedocs.io/ |
 | ExternalDNS | Kubernetes controller | Reconciles `DNSEndpoint` CRs into Cloud DNS records | https://github.com/kubernetes-sigs/external-dns |
-| cert-manager | CNCF certificate controller | Optional: DNS-01 ACME issuers via Cloud DNS (future platform needs) | https://cert-manager.io/docs/ |
 | OpenTofu | IaC tool (Terraform-compatible) | Provisions GKE, Cloud DNS, IAM, Workload Identity bindings | https://opentofu.org/ |
 | OPA / Conftest | CNCF policy engine + CLI | Validates DNS record PRs with policy-as-code | https://www.conftest.dev/ |
-| kubeconform | Kubernetes manifest validator | Schema validation for CRDs (ExternalDNS, cert-manager) | https://github.com/yannh/kubeconform |
+| kubeconform | Kubernetes manifest validator | Schema validation for CRDs (ExternalDNS) | https://github.com/yannh/kubeconform |
 
 ## Quickstart (Operator)
 
@@ -123,6 +121,6 @@ dig +short <subdomain>.simardeep.xyz NS
 ## Security Model
 
 1. Workload Identity only: no service account keys are created; no GCP credentials are stored in Git or Kubernetes Secrets.
-2. Least-privilege IAM: ExternalDNS and cert-manager each get a dedicated GSA with DNS permissions scoped to the `simardeep.xyz` managed zone (via IAM Conditions).
+2. Least-privilege IAM: ExternalDNS uses Workload Identity with DNS permissions scoped to the `simardeep.xyz` managed zone.
 3. Git approval gate: DNS changes require PR review enforced by `CODEOWNERS`.
 4. Blast radius: if ExternalDNS credentials were compromised, an attacker could modify records in `simardeep.xyz` but cannot manage other GCP resources.

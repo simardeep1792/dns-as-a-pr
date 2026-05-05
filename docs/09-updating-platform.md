@@ -8,12 +8,6 @@ All updates are Git changes merged via PR.
 2. Merge PR.
 3. Confirm ArgoCD sync and controller logs are healthy.
 
-## Update cert-manager
-
-1. Update `k8s/platform/cert-manager-app.yaml` chart `targetRevision`.
-2. Merge PR.
-3. Confirm issuers remain `Ready`.
-
 ## Update ArgoCD
 
 ArgoCD was installed from a pinned upstream manifest.
