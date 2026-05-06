@@ -20,7 +20,9 @@ spec:
         policy: sync
         domainFilters:
           - simardeep.xyz
-        txtOwnerId: simardeep-xyz
+        # Temporarily use noop registry to prove end-to-end record creation works.
+        # Once confirmed, switch back to txt registry for safe ownership tracking.
+        registry: noop
         logLevel: debug
         serviceAccount:
           create: true
