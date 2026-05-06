@@ -11,20 +11,18 @@ spec:
   source:
     repoURL: https://kubernetes-sigs.github.io/external-dns/
     chart: external-dns
-    targetRevision: 1.15.0
+    targetRevision: 1.21.1
     helm:
       values: |
         provider: google
         sources:
           - crd
-          # Temporary: allow service-based smoke tests (see docs).
-          - service
-        policy: sync
+        # Safer default for a PR-driven registry: don’t delete records on drift.
+        policy: upsert-only
         domainFilters:
           - simardeep.xyz
-        # Temporarily use noop registry to prove end-to-end record creation works.
-        # Once confirmed, switch back to txt registry for safe ownership tracking.
-        registry: noop
+        registry: txt
+        txtOwnerId: simardeep-xyz
         logLevel: debug
         serviceAccount:
           create: true
