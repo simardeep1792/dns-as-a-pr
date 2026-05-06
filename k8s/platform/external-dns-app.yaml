@@ -33,7 +33,6 @@ spec:
           - --crd-source-apiversion=externaldns.k8s.io/v1alpha1
           - --crd-source-kind=DNSEndpoint
           - --managed-record-types=A,AAAA,CNAME,TXT,MX,NS
-          - --txt-prefix=_externaldns.
           - --google-project=edip-aurora-fgc
           # Only manage records in the parent simardeep.xyz zone.
           # This prevents ExternalDNS from selecting a more specific delegated zone
