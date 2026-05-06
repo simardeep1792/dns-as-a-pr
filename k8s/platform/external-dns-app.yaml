@@ -17,8 +17,7 @@ spec:
         provider: google
         sources:
           - crd
-        # Safer default for a PR-driven registry: don’t delete records on drift.
-        policy: upsert-only
+        policy: sync
         domainFilters:
           - simardeep.xyz
         txtOwnerId: simardeep-xyz
