@@ -35,6 +35,10 @@ spec:
           - --managed-record-types=A,AAAA,CNAME,TXT,MX,NS
           - --txt-prefix=_externaldns.
           - --google-project=edip-aurora-fgc
+          # Only manage records in the parent simardeep.xyz zone.
+          # This prevents ExternalDNS from selecting a more specific delegated zone
+          # in the same project and silently reconciling records into the wrong zone.
+          - --zone-name-filter=simardeep-xyz
         rbac:
           create: true
           additionalPermissions:
