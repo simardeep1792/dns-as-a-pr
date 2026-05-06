@@ -1,0 +1,17 @@
+apiVersion: externaldns.k8s.io/v1alpha1
+kind: DNSEndpoint
+metadata:
+  name: delegation-test-simardeep-xyz
+  namespace: dns
+  labels:
+    simardeep.xyz/owner: "dns-as-a-pr-e2e-test"
+spec:
+  endpoints:
+    - dnsName: delegation-test.simardeep.xyz
+      recordType: NS
+      recordTTL: 300
+      targets:
+        - ns-cloud-b1.googledomains.com.
+        - ns-cloud-b2.googledomains.com.
+        - ns-cloud-b3.googledomains.com.
+        - ns-cloud-b4.googledomains.com.

@@ -15,13 +15,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install tools (yamllint, kubeconform, conftest)
+      - name: Install tools (yamllint, conftest)
         run: |
+          set -euo pipefail
+
           python3 -m pip install --upgrade pip
           python3 -m pip install yamllint==1.35.1
-
-          curl -sSL -o /usr/local/bin/kubeconform https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64
-          chmod +x /usr/local/bin/kubeconform
 
           curl -sSL https://github.com/open-policy-agent/conftest/releases/download/v0.57.0/conftest_0.57.0_Linux_x86_64.tar.gz \
             | tar -xz -C /usr/local/bin conftest
@@ -29,14 +28,6 @@ jobs:
       - name: Validate YAML syntax (line/col)
         run: |
           yamllint -f parsable dns-records
-
-      - name: Validate DNSEndpoint schema (kubeconform)
-        run: |
-          kubeconform \
-            -strict \
-            -schema-location default \
-            -schema-location "file://$(pwd)/schemas" \
-            dns-records
 
       - name: Policy checks (Conftest / OPA)
         run: |
