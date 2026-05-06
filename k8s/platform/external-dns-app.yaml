@@ -17,6 +17,8 @@ spec:
         provider: google
         sources:
           - crd
+          # Temporary: allow service-based smoke tests (see docs).
+          - service
         policy: sync
         domainFilters:
           - simardeep.xyz
