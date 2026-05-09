@@ -3,6 +3,7 @@
 /dns-records/** @simardeep1792
 /k8s/** @simardeep1792
 /infra/** @simardeep1792
-/policies/** @simardeep1792
+/schemas/** @simardeep1792
 /.github/** @simardeep1792
-/docs/** @simardeep1792
+/README.md @simardeep1792
+/e2e-dns.sh @simardeep1792

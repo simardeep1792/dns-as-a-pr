@@ -1,52 +1,108 @@
-# simardeep-platform (dns-as-a-pr)
+# dns-as-a-pr
 
-This repository is a GitOps DNS registry for `simardeep.xyz`: you register subdomains by opening a GitHub pull request.
-ArgoCD syncs the declared DNS records into a dedicated GKE control-plane cluster, and ExternalDNS reconciles them into Google Cloud DNS.
+`dns-as-a-pr` is a small GitOps DNS registry for `simardeep.xyz`.
 
-```
-  Developer / Team
-        |
-        | 1) PR adds/updates dns-records/*.yaml (DNSEndpoint)
-        v
-     GitHub (main)
-        |
-        | 2) ArgoCD sync
-        v
-  GKE Autopilot (dns-as-a-pr)
-    - ArgoCD
-    - ExternalDNS (source=crd)
-        |
-        | 3) ExternalDNS calls Cloud DNS API (Workload Identity)
-        v
-   Cloud DNS managed zone: simardeep.xyz
-        |
-        v
-    Public DNS resolvers / internet
+The contract is simple: a DNS change is a pull request. After the PR is merged, ArgoCD applies the `DNSEndpoint` manifest to the GKE control-plane cluster and ExternalDNS reconciles it into Google Cloud DNS. No service account keys, no manual DNS console work after merge.
+
+```text
+Pull request -> GitHub main -> ArgoCD -> DNSEndpoint CRD -> ExternalDNS -> Cloud DNS
 ```
 
-**Components**
+## What This Runs
 
-| Component | What it is | Why it is used here | Docs |
-|---|---|---|---|
-| Argo CD | CNCF GitOps controller | Applies Kubernetes manifests from Git and keeps them reconciled | https://argo-cd.readthedocs.io/ |
-| ExternalDNS | Kubernetes controller | Reconciles `DNSEndpoint` CRs into Cloud DNS records | https://github.com/kubernetes-sigs/external-dns |
-| OpenTofu | IaC tool (Terraform-compatible) | Provisions GKE, Cloud DNS, IAM, Workload Identity bindings | https://opentofu.org/ |
-| kubeconform | Kubernetes manifest validator | Schema validation for CRDs (ExternalDNS) | https://github.com/yannh/kubeconform |
+| Layer | Choice | Purpose |
+|---|---|---|
+| Infrastructure | OpenTofu | Creates GKE, Cloud DNS, IAM, and Workload Identity bindings. |
+| GitOps | ArgoCD | Continuously applies this repo to the cluster. |
+| DNS controller | ExternalDNS | Reads `DNSEndpoint` objects and writes Cloud DNS records. |
+| Validation | yamllint + kubeconform | Keeps PRs structurally correct without a policy engine. |
 
-## Quickstart (Operator)
+The cluster is intentionally a control plane only. It does not host application traffic.
 
-### Prereqs
+## Repository Layout
+
+```text
+.
+|-- dns-records/          # User-facing DNS records; each .yaml is a DNSEndpoint
+|-- infra/                # OpenTofu modules and poc environment
+|-- k8s/                  # ArgoCD bootstrap and platform applications
+|-- schemas/              # Local JSON schemas for CI validation
+|-- e2e-dns.sh            # Live end-to-end DNS verification
+`-- README.md             # Product, operator, and contributor guide
+```
+
+## DNS Record Contract
+
+All records live in `dns-records/` and must use this shape:
+
+```yaml
+apiVersion: externaldns.k8s.io/v1alpha1
+kind: DNSEndpoint
+metadata:
+  name: blog-simardeep-xyz
+  namespace: dns
+  labels:
+    simardeep.xyz/owner: "your-name-or-team"
+spec:
+  endpoints:
+    - dnsName: blog.simardeep.xyz
+      recordType: A
+      recordTTL: 300
+      targets:
+        - 203.0.113.10
+```
+
+Supported record types are `A`, `AAAA`, `CNAME`, `TXT`, and `NS`.
+
+Use `NS` when you want to delegate a whole subdomain to another authoritative zone:
+
+```yaml
+apiVersion: externaldns.k8s.io/v1alpha1
+kind: DNSEndpoint
+metadata:
+  name: project-simardeep-xyz
+  namespace: dns
+  labels:
+    simardeep.xyz/owner: "your-name-or-team"
+spec:
+  endpoints:
+    - dnsName: project.simardeep.xyz
+      recordType: NS
+      recordTTL: 300
+      targets:
+        - ns-cloud-a1.googledomains.com
+        - ns-cloud-a2.googledomains.com
+        - ns-cloud-a3.googledomains.com
+        - ns-cloud-a4.googledomains.com
+```
+
+## Add Or Change DNS
+
+1. Copy `dns-records/_template.yaml.txt`.
+2. Save it as `dns-records/<subdomain>.simardeep.xyz.yaml`.
+3. Set `metadata.name`, `metadata.labels.simardeep.xyz/owner`, `dnsName`, `recordType`, `recordTTL`, and `targets`.
+4. Open a pull request.
+5. Wait for GitHub Actions to pass.
+6. Merge the PR.
+7. ArgoCD and ExternalDNS reconcile the record automatically.
+
+Verify from your workstation:
+
+```bash
+dig +short <subdomain>.simardeep.xyz A
+dig +short <subdomain>.simardeep.xyz TXT
+dig +short <subdomain>.simardeep.xyz NS
+```
+
+## Bootstrap The Platform
+
+Prerequisites:
 
 1. GCP project: `edip-aurora-fgc`
-2. Domain registered at Namecheap: `simardeep.xyz`
-3. Tools installed locally:
-   - `gcloud`
-   - `kubectl`
-   - `tofu` (OpenTofu)
+2. Domain: `simardeep.xyz`
+3. Local tools: `gcloud`, `kubectl`, `tofu`
 
-### 1) Create the OpenTofu state bucket
-
-Make sure the bucket exists before running any OpenTofu commands:
+Create the OpenTofu state bucket once:
 
 ```bash
 gcloud storage buckets create gs://edip-aurora-fgc-tofu-state \
@@ -55,29 +111,18 @@ gcloud storage buckets create gs://edip-aurora-fgc-tofu-state \
   --uniform-bucket-level-access
 ```
 
-### 2) Provision infrastructure (GKE + Cloud DNS + IAM)
+Provision GKE, Cloud DNS, and IAM:
 
 ```bash
 cd infra/envs/poc
 tofu init
 tofu apply -var "authorized_cidr=<YOUR_PUBLIC_IPV4>/32"
-```
-
-After apply, copy the Cloud DNS nameservers:
-
-```bash
 tofu output -json name_servers
 ```
 
-### 3) Configure Namecheap to delegate DNS to Cloud DNS
+Set the `simardeep.xyz` nameservers in Namecheap to the Cloud DNS nameservers from `tofu output`.
 
-Update the `simardeep.xyz` nameserver settings in Namecheap to the exact list output by OpenTofu.
-
-Runbook: `docs/04-configure-namecheap.md`
-
-### 4) Bootstrap ArgoCD (one-time)
-
-Once the cluster exists and your kubeconfig points to it:
+Bootstrap ArgoCD once:
 
 ```bash
 gcloud container clusters get-credentials dns-as-a-pr \
@@ -89,37 +134,70 @@ kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/v2
 kubectl apply -f k8s/bootstrap/root-app.yaml
 ```
 
-Runbook: `docs/03-bootstrap-argocd.md`
+After that, ArgoCD owns the platform from Git.
 
-## Adding a Subdomain
-
-DNS records are declared as `DNSEndpoint` YAML files under `dns-records/`.
-
-### Pattern 1: Point to an IPv4 address (A record)
-
-Use when you have a stable public IPv4 (VPS, VM, bare metal).
-
-### Pattern 2: Point to a hostname (CNAME)
-
-Use when your provider gives you a hostname target (Vercel, Netlify, Render, Railway).
-
-### Pattern 3: Delegate a whole zone (NS delegation)
-
-Use when you run your own authoritative DNS for `something.simardeep.xyz` (your own Cloud DNS zone / cluster). This creates `NS` records that hand off authority for everything under that subdomain.
-
-Step-by-step guide: `dns-records/README.md`
-
-After merge, verify:
+## Validate Locally
 
 ```bash
-dig +short <subdomain>.simardeep.xyz A
-dig +short <subdomain>.simardeep.xyz CNAME
-dig +short <subdomain>.simardeep.xyz NS
+yamllint -f parsable dns-records k8s .github/workflows
+kubeconform \
+  -strict \
+  -schema-location default \
+  -schema-location "schemas/{{.ResourceKind}}-{{.Group}}-{{.ResourceAPIVersion}}.json" \
+  k8s dns-records
+
+cd infra
+tofu fmt -check -recursive
+cd envs/poc
+tofu validate
 ```
+
+## End-To-End Test
+
+Run the live DNS test from the repo root:
+
+```bash
+./e2e-dns.sh
+```
+
+The test verifies:
+
+1. ArgoCD apps are synced and healthy.
+2. `DNSEndpoint` objects exist in the `dns` namespace.
+3. ExternalDNS is running with the expected CRD source, domain filter, public-zone filter, and record type flags.
+4. Cloud DNS has the expected A, TXT, NS, and ownership TXT records.
+5. Authoritative Cloud DNS nameservers resolve the records.
+
+## Operations
+
+Check ArgoCD:
+
+```bash
+kubectl -n argocd get applications
+```
+
+Check ExternalDNS:
+
+```bash
+kubectl -n external-dns get pods
+kubectl -n external-dns logs deploy/external-dns --tail=100
+```
+
+Check records in Cloud DNS:
+
+```bash
+gcloud dns record-sets list --zone simardeep-xyz --project edip-aurora-fgc
+```
+
+ExternalDNS-managed records have ownership TXT records prefixed with `edns-`.
 
 ## Security Model
 
-1. Workload Identity only: no service account keys are created; no GCP credentials are stored in Git or Kubernetes Secrets.
-2. Least-privilege IAM: ExternalDNS uses Workload Identity with DNS permissions scoped to the `simardeep.xyz` managed zone.
-3. Git approval gate: DNS changes require PR review enforced by `CODEOWNERS`.
-4. Blast radius: if ExternalDNS credentials were compromised, an attacker could modify records in `simardeep.xyz` but cannot manage other GCP resources.
+1. GCP auth uses Workload Identity. There are no service account keys.
+2. ExternalDNS writes only through the dedicated Google service account.
+3. DNS changes are reviewed through GitHub pull requests and `CODEOWNERS`.
+4. ExternalDNS is scoped to `simardeep.xyz` and public Cloud DNS zones.
+
+## Future UI
+
+A UI would be useful, but it should stay thin: a form that asks for subdomain, record type, TTL, owner, and targets, then opens a GitHub pull request containing the generated YAML. The UI should not write DNS directly. Git remains the source of truth.
