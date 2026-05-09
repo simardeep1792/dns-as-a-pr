@@ -11,4 +11,5 @@ spec:
       recordType: TXT
       recordTTL: 300
       targets:
-        - "dns-as-pr-works"
+        # TXT record payloads are quoted at the DNS layer; keep quotes explicit.
+        - '"dns-as-pr-works"'
