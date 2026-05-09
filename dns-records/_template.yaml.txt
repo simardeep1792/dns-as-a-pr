@@ -11,6 +11,6 @@ spec:
   endpoints:
     - dnsName: <subdomain>.simardeep.xyz
       recordType: A
-      ttl: 300
+      recordTTL: 300
       targets:
         - 203.0.113.10

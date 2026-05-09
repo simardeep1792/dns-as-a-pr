@@ -13,7 +13,7 @@ Each file is an ExternalDNS `DNSEndpoint` custom resource. ArgoCD applies these 
 
 Only these record types are accepted by CI:
 
-`A`, `AAAA`, `CNAME`, `NS`, `TXT`, `MX`
+`A`, `AAAA`, `CNAME`, `NS`, `TXT`
 
 ## DNS Name Rules
 
@@ -22,7 +22,7 @@ Only these record types are accepted by CI:
 
 ## TTL Rules
 
-`ttl` must be an integer between `60` and `86400`.
+`recordTTL` must be an integer between `60` and `86400`.
 
 ## Targets Rules
 
@@ -34,14 +34,13 @@ Only these record types are accepted by CI:
 1. Copy an example from `dns-records/_examples/`.
    - Or start from `dns-records/_template.yaml.txt`.
 2. Create a new file named `<subdomain>.simardeep.xyz.yaml`.
-3. Set `dnsName`, `recordType`, `ttl`, and `targets`.
+3. Set `dnsName`, `recordType`, `recordTTL`, and `targets`.
 4. Open a pull request.
 
 CI will validate:
 
 1. YAML syntax
 2. DNSEndpoint schema
-3. Policy checks (domain suffix, allowed record types, TTL range, targets non-empty, NS redundancy)
 
 After merge, ExternalDNS typically reconciles within minutes.
 
@@ -68,6 +67,6 @@ What you are responsible for after delegation:
 
 1. Keeping your nameservers online and stable.
 2. Managing all records under the delegated subdomain.
-3. Ensuring your zone contains any required records (including `A`, `AAAA`, `MX`, `TXT`, etc).
+3. Ensuring your zone contains any required records (including `A`, `AAAA`, `TXT`, etc).
 
 Example: `dns-records/_examples/ns-delegation.yaml.txt`

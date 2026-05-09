@@ -1,12 +1,12 @@
 ---
 name: DNS record
-about: Add/update A, AAAA, CNAME, TXT, MX records under simardeep.xyz
+about: Add/update A, AAAA, CNAME, TXT records under simardeep.xyz
 ---
 
 ## Request
 
 - Subdomain: `___`
-- Record type: `A | AAAA | CNAME | TXT | MX`
+- Record type: `A | AAAA | CNAME | TXT`
 - Target value(s): `___`
 - TTL (seconds): `___`
 

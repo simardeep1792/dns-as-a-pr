@@ -17,6 +17,8 @@ spec:
         provider: google
         sources:
           - crd
+        domainFilters:
+          - simardeep.xyz
         # Safer default for a PR-driven registry: don’t delete records on drift.
         policy: upsert-only
         registry: txt
@@ -33,8 +35,13 @@ spec:
           - --namespace=dns
           - --crd-source-apiversion=externaldns.k8s.io/v1alpha1
           - --crd-source-kind=DNSEndpoint
-          - --managed-record-types=A,AAAA,CNAME,TXT,MX,NS
+          - --managed-record-types=A
+          - --managed-record-types=AAAA
+          - --managed-record-types=CNAME
+          - --managed-record-types=TXT
+          - --managed-record-types=NS
           - --google-project=edip-aurora-fgc
+          - --google-zone-visibility=public
         rbac:
           create: true
           additionalPermissions:

@@ -9,6 +9,6 @@ spec:
   endpoints:
     - dnsName: app.simardeep.xyz
       recordType: CNAME
-      ttl: 300
+      recordTTL: 300
       targets:
         - cname-target.example.net.

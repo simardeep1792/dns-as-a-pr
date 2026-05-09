@@ -10,7 +10,7 @@ This is the developer journey: Git PR -> CI validation -> merge -> record appear
 4. Fill in:
    - `spec.endpoints[].dnsName`
    - `recordType`
-   - `ttl`
+   - `recordTTL`
    - `targets`
 5. Open a pull request.
 
@@ -18,11 +18,8 @@ This is the developer journey: Git PR -> CI validation -> merge -> record appear
 
 1. YAML syntax
 2. DNSEndpoint schema
-3. Policy rules:
-   - only `.simardeep.xyz` (no apex)
-   - allowed types (A/AAAA/CNAME/NS/TXT/MX)
-   - TTL range 60..86400
-   - targets non-empty (and NS >= 2)
+3. Supported record types: `A`, `AAAA`, `CNAME`, `NS`, `TXT`
+4. TTL range: `recordTTL` from `60` to `86400`
 
 ## After Merge: Verify
 

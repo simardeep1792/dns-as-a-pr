@@ -31,7 +31,6 @@ ArgoCD syncs the declared DNS records into a dedicated GKE control-plane cluster
 | Argo CD | CNCF GitOps controller | Applies Kubernetes manifests from Git and keeps them reconciled | https://argo-cd.readthedocs.io/ |
 | ExternalDNS | Kubernetes controller | Reconciles `DNSEndpoint` CRs into Cloud DNS records | https://github.com/kubernetes-sigs/external-dns |
 | OpenTofu | IaC tool (Terraform-compatible) | Provisions GKE, Cloud DNS, IAM, Workload Identity bindings | https://opentofu.org/ |
-| OPA / Conftest | CNCF policy engine + CLI | Validates DNS record PRs with policy-as-code | https://www.conftest.dev/ |
 | kubeconform | Kubernetes manifest validator | Schema validation for CRDs (ExternalDNS) | https://github.com/yannh/kubeconform |
 
 ## Quickstart (Operator)
