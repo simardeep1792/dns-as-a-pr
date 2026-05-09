@@ -2,10 +2,10 @@
 
 `dns-as-a-pr` is a small GitOps DNS registry for `simardeep.xyz`.
 
-The contract is simple: a DNS change is a pull request. After the PR is merged, ArgoCD applies the `DNSEndpoint` manifest to the GKE control-plane cluster and ExternalDNS reconciles it into Google Cloud DNS. No service account keys, no manual DNS console work after merge.
+The contract is simple: a DNS change is a pull request. After the request is merged, ArgoCD applies the `DNSEndpoint` manifest to the GKE control-plane cluster and ExternalDNS reconciles it into Google Cloud DNS. No service account keys, no manual DNS console work after merge.
 
 ```text
-Pull request -> GitHub main -> ArgoCD -> DNSEndpoint CRD -> ExternalDNS -> Cloud DNS
+Pull request -> Git main -> ArgoCD -> DNSEndpoint CRD -> ExternalDNS -> Cloud DNS
 ```
 
 ## What This Runs
@@ -19,6 +19,8 @@ Pull request -> GitHub main -> ArgoCD -> DNSEndpoint CRD -> ExternalDNS -> Cloud
 
 The cluster is intentionally a control plane only. It does not host application traffic.
 
+GitHub is the current host, not a platform requirement. The reusable scripts in `scripts/` are the validation contract; GitHub Actions are only wrappers around those scripts. Azure DevOps can call the same scripts later.
+
 ## Repository Layout
 
 ```text
@@ -27,7 +29,7 @@ The cluster is intentionally a control plane only. It does not host application 
 |-- infra/                # OpenTofu modules and poc environment
 |-- k8s/                  # ArgoCD bootstrap and ordered platform manifests
 |-- schemas/              # Local JSON schemas for CI validation
-|-- scripts/              # Operator scripts, including live e2e DNS verification
+|-- scripts/              # Portable validation, generation, and e2e scripts
 `-- README.md             # Product, operator, and contributor guide
 ```
 
@@ -94,6 +96,16 @@ dig +short <subdomain>.simardeep.xyz TXT
 dig +short <subdomain>.simardeep.xyz NS
 ```
 
+You can also generate the YAML from the command line. This is the same flow a future UI should call behind the scenes:
+
+```bash
+scripts/new-dns-record.sh \
+  --subdomain blog \
+  --type A \
+  --target 203.0.113.10 \
+  --owner platform
+```
+
 ## Bootstrap The Platform
 
 Prerequisites:
@@ -139,17 +151,9 @@ After that, ArgoCD owns the platform from Git.
 ## Validate Locally
 
 ```bash
-yamllint -f parsable dns-records k8s .github/workflows
-kubeconform \
-  -strict \
-  -schema-location default \
-  -schema-location "schemas/{{.ResourceKind}}-{{.Group}}-{{.ResourceAPIVersion}}.json" \
-  k8s dns-records
-
-cd infra
-tofu fmt -check -recursive
-cd envs/poc
-tofu validate
+scripts/validate-dns.sh
+scripts/validate-k8s.sh
+scripts/validate-infra.sh
 ```
 
 ## End-To-End Test
@@ -200,4 +204,20 @@ ExternalDNS-managed records have ownership TXT records prefixed with `edns-`.
 
 ## Future UI
 
-A UI would be useful, but it should stay thin: a form that asks for subdomain, record type, TTL, owner, and targets, then opens a GitHub pull request containing the generated YAML. The UI should not write DNS directly. Git remains the source of truth.
+A UI makes sense, but it should stay thin. It should ask for subdomain, record type, TTL, owner, and targets, generate the same `DNSEndpoint` YAML as `scripts/new-dns-record.sh`, and open a pull request through a pluggable Git provider.
+
+```text
+UI form -> generate YAML -> create branch -> open pull request -> CI -> merge -> ArgoCD -> ExternalDNS
+```
+
+The UI should never write Cloud DNS directly and should not talk to GCP. Git remains the source of truth.
+
+The provider seam should be small:
+
+```text
+GitProvider.createBranch()
+GitProvider.upsertFile()
+GitProvider.openPullRequest()
+```
+
+Today that provider can be GitHub. Later it can be Azure DevOps without changing the DNS registry, manifests, validation scripts, or ArgoCD/ExternalDNS flow.

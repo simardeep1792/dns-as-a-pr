@@ -1,9 +1,15 @@
 name: Infrastructure Validation
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - "infra/**"
+      - "scripts/validate-infra.sh"
   pull_request:
     paths:
       - "infra/**"
+      - "scripts/validate-infra.sh"
 
 jobs:
   validate:
@@ -28,17 +34,8 @@ jobs:
           workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ secrets.GCP_TERRAFORM_SA_EMAIL }}
 
-      - name: OpenTofu fmt check
-        working-directory: infra
-        run: tofu fmt -check -recursive
-
-      - name: OpenTofu init (no backend)
-        working-directory: infra/envs/poc
-        run: tofu init -backend=false
-
-      - name: OpenTofu validate
-        working-directory: infra/envs/poc
-        run: tofu validate
+      - name: Validate infrastructure
+        run: scripts/validate-infra.sh
 
       - name: OpenTofu plan
         id: plan
