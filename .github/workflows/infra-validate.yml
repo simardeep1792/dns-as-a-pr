@@ -28,16 +28,18 @@ jobs:
         with:
           tofu_version: 1.9.1
 
+      - name: Validate infrastructure
+        run: scripts/validate-infra.sh
+
       - name: Authenticate to GCP (OIDC)
+        if: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER != '' && secrets.GCP_TERRAFORM_SA_EMAIL != '' }}
         uses: google-github-actions/auth@v2
         with:
           workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ secrets.GCP_TERRAFORM_SA_EMAIL }}
 
-      - name: Validate infrastructure
-        run: scripts/validate-infra.sh
-
       - name: OpenTofu plan
+        if: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER != '' && secrets.GCP_TERRAFORM_SA_EMAIL != '' }}
         id: plan
         working-directory: infra/envs/poc
         run: |
@@ -46,7 +48,7 @@ jobs:
             | tee plan.txt
 
       - name: Comment plan summary
-        if: always()
+        if: ${{ github.event_name == 'pull_request' && always() && hashFiles('infra/envs/poc/plan.txt') != '' }}
         uses: actions/github-script@v7
         with:
           script: |
