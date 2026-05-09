@@ -27,7 +27,7 @@ The cluster is intentionally a control plane only. It does not host application 
 |-- infra/                # OpenTofu modules and poc environment
 |-- k8s/                  # ArgoCD bootstrap and ordered platform manifests
 |-- schemas/              # Local JSON schemas for CI validation
-|-- e2e-dns.sh            # Live end-to-end DNS verification
+|-- scripts/              # Operator scripts, including live e2e DNS verification
 `-- README.md             # Product, operator, and contributor guide
 ```
 
@@ -157,7 +157,7 @@ tofu validate
 Run the live DNS test from the repo root:
 
 ```bash
-./e2e-dns.sh
+./scripts/e2e-dns.sh
 ```
 
 The test verifies:
