@@ -25,7 +25,7 @@ The cluster is intentionally a control plane only. It does not host application 
 .
 |-- dns-records/          # User-facing DNS records; each .yaml is a DNSEndpoint
 |-- infra/                # OpenTofu modules and poc environment
-|-- k8s/                  # ArgoCD bootstrap and platform applications
+|-- k8s/                  # ArgoCD bootstrap and ordered platform manifests
 |-- schemas/              # Local JSON schemas for CI validation
 |-- e2e-dns.sh            # Live end-to-end DNS verification
 `-- README.md             # Product, operator, and contributor guide
