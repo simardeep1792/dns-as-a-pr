@@ -19,10 +19,10 @@ spec:
           - crd
         # Safer default for a PR-driven registry: don’t delete records on drift.
         policy: upsert-only
-        domainFilters:
-          - simardeep.xyz
         registry: txt
         txtOwnerId: simardeep-xyz
+        # Avoid TXT registry collisions with user-managed TXT records.
+        txtPrefix: edns-
         logLevel: debug
         serviceAccount:
           create: true
