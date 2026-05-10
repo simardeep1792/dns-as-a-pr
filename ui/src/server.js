@@ -1,6 +1,7 @@
 import express from "express";
 import dns from "dns/promises";
 import net from "net";
+import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { branchNameFor, filePathFor, normalizeRequest, renderYaml } from "./dns.js";
@@ -9,6 +10,7 @@ import { createProviderFromEnv } from "./git-provider.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const publicDir = path.resolve(__dirname, "../public");
+const repoRoot = path.resolve(__dirname, "../..");
 
 const app = express();
 const port = Number(process.env.PORT || 8080);
@@ -133,7 +135,10 @@ app.post("/api/preview", (req, res) => {
 app.post("/api/validate", async (req, res) => {
   try {
     const artifacts = buildRequestArtifacts(req.body);
-    const exists = await provider.fileExists(artifacts.filePath, baseBranch);
+    const localPath = path.resolve(repoRoot, artifacts.filePath);
+    const localExists = fs.existsSync(localPath);
+    const remoteExists = await provider.fileExists(artifacts.filePath, baseBranch);
+    const exists = localExists || remoteExists;
 
     const checks = [
       {
@@ -174,7 +179,10 @@ app.post("/api/validate", async (req, res) => {
 app.post("/api/requests", async (req, res) => {
   try {
     const artifacts = buildRequestArtifacts(req.body);
-    const exists = await provider.fileExists(artifacts.filePath, baseBranch);
+    const localPath = path.resolve(repoRoot, artifacts.filePath);
+    const localExists = fs.existsSync(localPath);
+    const remoteExists = await provider.fileExists(artifacts.filePath, baseBranch);
+    const exists = localExists || remoteExists;
     if (exists) {
       return res.status(409).json({
         error: `record file already exists at ${artifacts.filePath}. update the existing manifest instead of creating a duplicate.`
