@@ -50,7 +50,7 @@
           </label>
 
           <div class="actions">
-            <button type="button" id="preview-btn">Preview YAML</button>
+            <button type="button" id="preview-btn">Validate request</button>
             <button type="submit" id="submit-btn">Create pull request</button>
           </div>
         </form>
@@ -58,8 +58,20 @@
         <section class="panel output-panel">
           <h2>Generated manifest</h2>
           <p id="meta" class="meta">Fill the form, preview the file, then create the pull request.</p>
+          <div id="checks" class="checks"></div>
+          <div id="pr-summary" class="pr-summary"></div>
           <pre id="yaml-preview"></pre>
+          <button type="button" id="copy-diff-btn" class="secondary-btn">Copy manifest diff</button>
+          <pre id="manifest-diff" class="diff-preview"></pre>
           <p id="result" class="result"></p>
+
+          <section class="status-panel">
+            <h3>Pull request status</h3>
+            <p>After creating a pull request, refresh status to track CI and live DNS.</p>
+            <label>PR URL or number<input id="pr-status-input" placeholder="https://github.com/org/repo/pull/123" /></label>
+            <button type="button" id="refresh-status-btn" class="secondary-btn">Refresh status</button>
+            <pre id="pr-status-output" class="diff-preview"></pre>
+          </section>
 
           <section class="architecture">
             <h3>How this works</h3>

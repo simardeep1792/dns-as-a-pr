@@ -10,6 +10,14 @@ class GitProvider {
   async openPullRequest(_) {
     throw new Error("not implemented");
   }
+
+  async fileExists(_, __) {
+    throw new Error("not implemented");
+  }
+
+  async getPullRequestStatus(_) {
+    throw new Error("not implemented");
+  }
 }
 
 class GitHubProvider extends GitProvider {
@@ -94,6 +102,44 @@ class GitHubProvider extends GitProvider {
 
     return { url: pr.html_url };
   }
+
+  async fileExists(path, ref) {
+    try {
+      await this.request(`/contents/${path}?ref=${encodeURIComponent(ref)}`);
+      return true;
+    } catch (_error) {
+      return false;
+    }
+  }
+
+  async getPullRequestStatus(prNumber) {
+    const pr = await this.request(`/pulls/${prNumber}`);
+    const checks = await this.request(`/commits/${pr.head.sha}/check-runs`);
+    let checksState = "pending";
+
+    const checkRuns = checks.check_runs || [];
+    if (checkRuns.length > 0) {
+      if (checkRuns.some((run) => run.status !== "completed")) {
+        checksState = "pending";
+      } else if (checkRuns.some((run) => run.conclusion !== "success")) {
+        checksState = "failed";
+      } else {
+        checksState = "success";
+      }
+    }
+
+    return {
+      number: pr.number,
+      state: pr.state,
+      merged: Boolean(pr.merged_at),
+      checksState,
+      checks: checkRuns.map((run) => ({
+        name: run.name,
+        status: run.status,
+        conclusion: run.conclusion || "pending"
+      }))
+    };
+  }
 }
 
 class DryRunProvider extends GitProvider {
@@ -103,6 +149,20 @@ class DryRunProvider extends GitProvider {
 
   async openPullRequest({ branch, title }) {
     return { url: `dry-run://pr/${branch}?title=${encodeURIComponent(title)}` };
+  }
+
+  async fileExists(_path, _ref) {
+    return false;
+  }
+
+  async getPullRequestStatus(_prNumber) {
+    return {
+      number: 0,
+      state: "open",
+      merged: false,
+      checksState: "pending",
+      checks: []
+    };
   }
 }
 

@@ -1,4 +1,6 @@
 import express from "express";
+import dns from "dns/promises";
+import net from "net";
 import path from "path";
 import { fileURLToPath } from "url";
 import { branchNameFor, filePathFor, normalizeRequest, renderYaml } from "./dns.js";
@@ -12,12 +14,28 @@ const app = express();
 const port = Number(process.env.PORT || 8080);
 const baseBranch = process.env.GIT_BASE_BRANCH || "main";
 const provider = createProviderFromEnv();
+const authoritativeServer = process.env.AUTHORITATIVE_DNS_SERVER || "ns-cloud-e1.googledomains.com";
+
+function parseCsvSet(value) {
+  return new Set(
+    String(value || "")
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean)
+  );
+}
+
+const policy = {
+  allowedZone: process.env.ALLOWED_DNS_ZONE || "simardeep.xyz",
+  protectedSubdomains: parseCsvSet(process.env.PROTECTED_SUBDOMAINS),
+  allowedPrefixes: parseCsvSet(process.env.ALLOWED_SUBDOMAIN_PREFIXES)
+};
 
 app.use(express.json());
 app.use(express.static(publicDir));
 
 function buildRequestArtifacts(payload) {
-  const normalized = normalizeRequest(payload);
+  const normalized = normalizeRequest(payload, policy);
   const yaml = renderYaml(normalized);
   const filePath = filePathFor(normalized.subdomain);
   const branch = branchNameFor(normalized.subdomain);
@@ -41,6 +59,59 @@ function buildRequestArtifacts(payload) {
   return { normalized, yaml, filePath, branch, title, body };
 }
 
+function parsePullRequestNumber(value) {
+  try {
+    const url = new URL(value);
+    const parts = url.pathname.split("/").filter(Boolean);
+    if (parts.length >= 4 && parts[2] === "pull") {
+      return Number(parts[3]);
+    }
+  } catch (_error) {
+    return Number(value);
+  }
+
+  return Number.NaN;
+}
+
+async function resolveDnsState(hostname) {
+  const fqdn = `${hostname}.${policy.allowedZone}`;
+  const resolver = new dns.Resolver();
+  let authoritativeResolverServer = authoritativeServer;
+  if (net.isIP(authoritativeServer) === 0) {
+    try {
+      const resolved = await dns.resolve4(authoritativeServer);
+      if (resolved.length > 0) {
+        authoritativeResolverServer = resolved[0];
+      }
+    } catch (_error) {
+      authoritativeResolverServer = authoritativeServer;
+    }
+  }
+  resolver.setServers([authoritativeResolverServer]);
+
+  let recursive = [];
+  let authoritative = [];
+
+  try {
+    recursive = await dns.resolve4(fqdn);
+  } catch (_error) {
+    recursive = [];
+  }
+
+  try {
+    authoritative = await resolver.resolve4(fqdn);
+  } catch (_error) {
+    authoritative = [];
+  }
+
+  return {
+    host: fqdn,
+    recursive,
+    authoritative,
+    live: recursive.length > 0 || authoritative.length > 0
+  };
+}
+
 app.get("/api/health", (_req, res) => {
   res.json({ ok: true, provider: process.env.GIT_PROVIDER_MODE || "dry-run" });
 });
@@ -59,9 +130,56 @@ app.post("/api/preview", (req, res) => {
   }
 });
 
+app.post("/api/validate", async (req, res) => {
+  try {
+    const artifacts = buildRequestArtifacts(req.body);
+    const exists = await provider.fileExists(artifacts.filePath, baseBranch);
+
+    const checks = [
+      {
+        name: "policy-validation",
+        status: "pass",
+        detail: "metadata, hostname, and target formats are valid"
+      },
+      {
+        name: "file-conflict",
+        status: exists ? "fail" : "pass",
+        detail: exists
+          ? `record file already exists at ${artifacts.filePath}`
+          : "no existing record file conflict"
+      }
+    ];
+
+    const hasFailure = checks.some((check) => check.status === "fail");
+    res.json({
+      ok: !hasFailure,
+      checks,
+      title: artifacts.title,
+      body: artifacts.body,
+      yaml: artifacts.yaml,
+      filePath: artifacts.filePath,
+      branch: artifacts.branch,
+      warnings: artifacts.normalized.warnings,
+      manifestDiff: [
+        `--- /dev/null`,
+        `+++ b/${artifacts.filePath}`,
+        ...artifacts.yaml.split("\n").filter(Boolean).map((line) => `+${line}`)
+      ].join("\n")
+    });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
 app.post("/api/requests", async (req, res) => {
   try {
     const artifacts = buildRequestArtifacts(req.body);
+    const exists = await provider.fileExists(artifacts.filePath, baseBranch);
+    if (exists) {
+      return res.status(409).json({
+        error: `record file already exists at ${artifacts.filePath}. update the existing manifest instead of creating a duplicate.`
+      });
+    }
     await provider.createBranch({ baseBranch, newBranch: artifacts.branch });
     await provider.upsertFile({
       branch: artifacts.branch,
@@ -78,8 +196,39 @@ app.post("/api/requests", async (req, res) => {
 
     res.status(201).json({
       url: pr.url,
+      pullRequestNumber: parsePullRequestNumber(pr.url),
       branch: artifacts.branch,
       filePath: artifacts.filePath
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get("/api/pr-status", async (req, res) => {
+  try {
+    const pr = String(req.query.pr || "").trim();
+    const subdomain = String(req.query.subdomain || "").trim().toLowerCase();
+
+    if (!pr) {
+      return res.status(400).json({ error: "pr query param is required" });
+    }
+
+    if (!subdomain) {
+      return res.status(400).json({ error: "subdomain query param is required" });
+    }
+
+    const number = parsePullRequestNumber(pr);
+    if (!Number.isInteger(number) || number <= 0) {
+      return res.status(400).json({ error: "pr must be a pull request number or URL" });
+    }
+
+    const prStatus = await provider.getPullRequestStatus(number);
+    const dnsState = await resolveDnsState(subdomain);
+
+    res.json({
+      pullRequest: prStatus,
+      dns: dnsState
     });
   } catch (error) {
     res.status(500).json({ error: error.message });

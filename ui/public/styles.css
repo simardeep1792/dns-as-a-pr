@@ -167,6 +167,28 @@ textarea {
   font-size: 0.9rem;
 }
 
+.checks,
+.pr-summary,
+.status-panel {
+  margin-bottom: 0.8rem;
+}
+
+.checks p,
+.pr-summary p,
+.status-panel p {
+  margin: 0.3rem 0;
+}
+
+.secondary-btn {
+  background: #fff;
+  margin-bottom: 0.7rem;
+}
+
+.diff-preview {
+  min-height: 7rem;
+  margin-bottom: 0.8rem;
+}
+
 .architecture {
   margin-top: 1rem;
   border-top: 1px solid var(--gc-border);
