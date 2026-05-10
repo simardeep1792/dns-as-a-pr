@@ -4,8 +4,82 @@
 
 The contract is simple: a DNS change is a pull request. After the request is merged, ArgoCD applies the `DNSEndpoint` manifest to the GKE control-plane cluster and ExternalDNS reconciles it into Google Cloud DNS. No service account keys, no manual DNS console work after merge.
 
-```text
-Pull request -> Git main -> ArgoCD -> DNSEndpoint CRD -> ExternalDNS -> Cloud DNS
+```mermaid
+flowchart LR
+  Requester[Requester] --> PR[Pull request]
+  PR --> Main[Git main branch]
+  Main --> Argo[ArgoCD sync]
+  Argo --> Endpoint[DNSEndpoint CRD]
+  Endpoint --> ExternalDNS[ExternalDNS reconcile]
+  ExternalDNS --> CloudDNS[Google Cloud DNS]
+```
+
+## Architecture
+
+This platform keeps a narrow responsibility boundary: request and review DNS in Git, then let GitOps and controllers reconcile state.
+
+```mermaid
+flowchart TB
+  subgraph UX[Request Surface]
+    UI[Web UI or CLI]
+  end
+
+  subgraph App[Request Service]
+    API[DNS Request API]
+    Generator[DNSEndpoint generator]
+    Adapter[Git provider adapter]
+  end
+
+  subgraph Git[Git Platform]
+    Repo[(dns-as-a-pr repository)]
+    CI[Validation pipeline]
+  end
+
+  subgraph Cluster[GKE Control Plane]
+    ArgoCD[ArgoCD]
+    CRD[DNSEndpoint objects]
+    EXDNS[ExternalDNS]
+  end
+
+  subgraph DNS[Authoritative DNS]
+    GCloudDNS[Google Cloud DNS zone]
+  end
+
+  UI --> API
+  API --> Generator
+  API --> Adapter
+  Adapter --> Repo
+  Repo --> CI
+  CI --> Repo
+  Repo --> ArgoCD
+  ArgoCD --> CRD
+  CRD --> EXDNS
+  EXDNS --> GCloudDNS
+```
+
+### Request Lifecycle
+
+```mermaid
+sequenceDiagram
+  actor User
+  participant UI as UI/CLI
+  participant API as Request API
+  participant Git as Git Provider
+  participant CI as CI Validation
+  participant Argo as ArgoCD
+  participant Ex as ExternalDNS
+  participant DNS as Cloud DNS
+
+  User->>UI: Submit subdomain, type, ttl, targets, owner
+  UI->>API: Create DNS request
+  API->>Git: Create branch and commit DNSEndpoint YAML
+  API->>Git: Open pull request
+  Git->>CI: Trigger validation
+  CI-->>Git: Pass/fail status
+  User->>Git: Merge pull request
+  Git->>Argo: New commit on main
+  Argo->>Ex: Apply manifests
+  Ex->>DNS: Upsert record sets
 ```
 
 ## What This Runs
@@ -219,5 +293,38 @@ GitProvider.createBranch()
 GitProvider.upsertFile()
 GitProvider.openPullRequest()
 ```
+
+A concrete interface shape for the UI backend:
+
+```ts
+export type RecordType = "A" | "AAAA" | "CNAME" | "TXT" | "NS";
+
+export interface DnsRequest {
+  subdomain: string;
+  zone: "simardeep.xyz";
+  recordType: RecordType;
+  recordTTL: number;
+  targets: string[];
+  owner: string;
+}
+
+export interface GitProvider {
+  createBranch(input: { baseBranch: string; newBranch: string }): Promise<void>;
+  upsertFile(input: {
+    branch: string;
+    path: string;
+    content: string;
+    message: string;
+  }): Promise<void>;
+  openPullRequest(input: {
+    branch: string;
+    baseBranch: string;
+    title: string;
+    body: string;
+  }): Promise<{ url: string }>;
+}
+```
+
+If you want a draw.io-style visual artifact, keep Mermaid in this README as the source of truth and export the same diagrams to `docs/architecture.drawio` during release prep.
 
 Today that provider can be GitHub. Later it can be Azure DevOps without changing the DNS registry, manifests, validation scripts, or ArgoCD/ExternalDNS flow.
