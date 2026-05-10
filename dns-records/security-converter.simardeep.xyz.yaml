@@ -1,0 +1,14 @@
+apiVersion: externaldns.k8s.io/v1alpha1
+kind: DNSEndpoint
+metadata:
+  name: security-converter-simardeep-xyz
+  namespace: dns
+  labels:
+    simardeep.xyz/owner: "platform"
+spec:
+  endpoints:
+    - dnsName: security-converter.simardeep.xyz
+      recordType: A
+      recordTTL: 300
+      targets:
+        - 34.96.124.138
