@@ -4,10 +4,23 @@ function validateSubdomain(subdomain) {
   return /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(subdomain);
 }
 
+function isLikelyHttpUrl(value) {
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch (_error) {
+    return false;
+  }
+}
+
 function normalizeRequest(input) {
   const subdomain = String(input.subdomain || "").trim().toLowerCase();
   const recordType = String(input.recordType || "").trim().toUpperCase();
   const owner = String(input.owner || "").trim();
+  const controlledBy = String(input.controlledBy || "").trim();
+  const projectName = String(input.projectName || "").trim();
+  const projectId = String(input.projectId || "").trim();
+  const sourceRepository = String(input.sourceRepository || "").trim();
   const ttl = Number(input.recordTTL);
   const targets = Array.isArray(input.targets)
     ? input.targets.map((item) => String(item).trim()).filter(Boolean)
@@ -29,6 +42,22 @@ function normalizeRequest(input) {
     throw new Error("owner is required");
   }
 
+  if (!controlledBy) {
+    throw new Error("controlled-by is required");
+  }
+
+  if (!projectName) {
+    throw new Error("project-name is required");
+  }
+
+  if (!projectId) {
+    throw new Error("project-id is required");
+  }
+
+  if (!sourceRepository || !isLikelyHttpUrl(sourceRepository)) {
+    throw new Error("source-repository must be a valid http/https URL");
+  }
+
   if (targets.length === 0) {
     throw new Error("at least one target is required");
   }
@@ -39,7 +68,11 @@ function normalizeRequest(input) {
     recordType,
     recordTTL: ttl,
     targets,
-    owner
+    owner,
+    controlledBy,
+    projectName,
+    projectId,
+    sourceRepository
   };
 }
 
@@ -63,7 +96,13 @@ function renderYaml(req) {
     "metadata:",
     `  name: ${manifestName(req.subdomain)}`,
     "  namespace: dns",
+    "  annotations:",
+    `    simardeep.xyz/source-repository: \"${req.sourceRepository}\"`,
+    "    simardeep.xyz/zone-scope: \"simardeep-xyz\"",
     "  labels:",
+    `    simardeep.xyz/controlled-by: \"${req.controlledBy}\"`,
+    `    simardeep.xyz/project-name: \"${req.projectName}\"`,
+    `    simardeep.xyz/project-id: \"${req.projectId}\"`,
     `    simardeep.xyz/owner: \"${req.owner}\"`,
     "spec:",
     "  endpoints:",

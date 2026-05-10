@@ -10,6 +10,10 @@ function payloadFromForm() {
     subdomain: data.get("subdomain"),
     recordType: data.get("recordType"),
     recordTTL: Number(data.get("recordTTL")),
+    controlledBy: data.get("controlledBy"),
+    projectName: data.get("projectName"),
+    projectId: data.get("projectId"),
+    sourceRepository: data.get("sourceRepository"),
     owner: data.get("owner"),
     targets: String(data.get("targets") || "")
       .split("\n")

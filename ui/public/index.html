@@ -40,6 +40,10 @@
           </label>
 
           <label>TTL<input name="recordTTL" type="number" min="1" value="300" required /></label>
+          <label>Controlled by<input name="controlledBy" required value="dns-as-a-pr" /></label>
+          <label>Project name<input name="projectName" required placeholder="sci-portal" /></label>
+          <label>Project ID<input name="projectId" required placeholder="pht-01hsv4d2m0n" /></label>
+          <label>Source repository<input name="sourceRepository" type="url" required placeholder="https://github.com/org/repo" /></label>
           <label>Owner or team<input name="owner" required placeholder="platform" /></label>
           <label>Targets (one per line)
             <textarea name="targets" rows="5" required placeholder="203.0.113.10"></textarea>
