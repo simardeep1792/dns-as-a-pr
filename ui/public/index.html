@@ -25,33 +25,53 @@
 
       <section class="panel-grid">
         <form id="request-form" class="panel">
-          <h2>Request details</h2>
+          <h2>Create request</h2>
+          <ol class="stepper" id="stepper">
+            <li class="active">Record</li>
+            <li>Ownership</li>
+            <li>Review</li>
+          </ol>
 
-          <label>Subdomain<input name="subdomain" required placeholder="blog" /></label>
+          <section class="step" data-step="1">
+            <h3>Step 1: Record details</h3>
+            <label>Subdomain<input name="subdomain" required placeholder="blog" /></label>
+            <label>Record Type
+              <select name="recordType" id="record-type" required>
+                <option>A</option>
+                <option>AAAA</option>
+                <option>CNAME</option>
+                <option>TXT</option>
+                <option>NS</option>
+              </select>
+            </label>
+            <p id="target-help" class="field-help">For A records, enter IPv4 values such as 203.0.113.10.</p>
+            <label>TTL<input name="recordTTL" type="number" min="1" value="300" required /></label>
+            <label>Targets (one per line)
+              <textarea name="targets" rows="5" required placeholder="203.0.113.10"></textarea>
+            </label>
+          </section>
 
-          <label>Record Type
-            <select name="recordType" required>
-              <option>A</option>
-              <option>AAAA</option>
-              <option>CNAME</option>
-              <option>TXT</option>
-              <option>NS</option>
-            </select>
-          </label>
+          <section class="step hidden" data-step="2">
+            <h3>Step 2: Ownership and source</h3>
+            <label>Controlled by<input name="controlledBy" required value="dns-as-a-pr" /></label>
+            <label>Project name<input name="projectName" required placeholder="sci-portal" /></label>
+            <label>Project ID<input name="projectId" required placeholder="pht-01hsv4d2m0n" /></label>
+            <label>Source repository<input name="sourceRepository" type="url" required placeholder="https://github.com/org/repo" /></label>
+            <label>Owner or team<input name="owner" required placeholder="platform" /></label>
+          </section>
 
-          <label>TTL<input name="recordTTL" type="number" min="1" value="300" required /></label>
-          <label>Controlled by<input name="controlledBy" required value="dns-as-a-pr" /></label>
-          <label>Project name<input name="projectName" required placeholder="sci-portal" /></label>
-          <label>Project ID<input name="projectId" required placeholder="pht-01hsv4d2m0n" /></label>
-          <label>Source repository<input name="sourceRepository" type="url" required placeholder="https://github.com/org/repo" /></label>
-          <label>Owner or team<input name="owner" required placeholder="platform" /></label>
-          <label>Targets (one per line)
-            <textarea name="targets" rows="5" required placeholder="203.0.113.10"></textarea>
-          </label>
+          <section class="step hidden" data-step="3">
+            <h3>Step 3: Validate and submit</h3>
+            <p class="field-help">Run validation before creating the pull request. The request button is enabled only when checks pass.</p>
+            <div class="actions">
+              <button type="button" id="preview-btn">Validate request</button>
+              <button type="submit" id="submit-btn" disabled>Create pull request</button>
+            </div>
+          </section>
 
-          <div class="actions">
-            <button type="button" id="preview-btn">Validate request</button>
-            <button type="submit" id="submit-btn">Create pull request</button>
+          <div class="actions nav-actions">
+            <button type="button" id="prev-step-btn" class="secondary-btn">Back</button>
+            <button type="button" id="next-step-btn">Next</button>
           </div>
         </form>
 

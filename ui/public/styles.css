@@ -94,6 +94,39 @@ p {
   padding: 1rem 1.1rem;
 }
 
+.hidden {
+  display: none;
+}
+
+.stepper {
+  margin: 0 0 1rem;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.4rem;
+}
+
+.stepper li {
+  border: 1px solid var(--gc-border);
+  background: #f5f5f5;
+  padding: 0.4rem 0.5rem;
+  font-size: 0.86rem;
+  text-align: center;
+}
+
+.stepper li.active {
+  background: #e6eef8;
+  border-color: #9fb7d6;
+  color: #15293f;
+  font-weight: 600;
+}
+
+.step h3 {
+  margin: 0 0 0.7rem;
+  font-size: 1rem;
+}
+
 h2 {
   margin-top: 0;
 }
@@ -144,6 +177,15 @@ textarea {
 .actions button {
   flex: 1;
   min-width: 11rem;
+}
+
+.nav-actions {
+  margin-top: 0.6rem;
+}
+
+.field-help {
+  margin: 0.2rem 0 0.7rem;
+  font-size: 0.85rem;
 }
 
 #preview-btn {
