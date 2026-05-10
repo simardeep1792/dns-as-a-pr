@@ -1,0 +1,14 @@
+apiVersion: externaldns.k8s.io/v1alpha1
+kind: DNSEndpoint
+metadata:
+  name: fff-simardeep-xyz
+  namespace: dns
+  labels:
+    simardeep.xyz/owner: "ff"
+spec:
+  endpoints:
+    - dnsName: fff.simardeep.xyz
+      recordType: A
+      recordTTL: 300
+      targets:
+        - ffff
