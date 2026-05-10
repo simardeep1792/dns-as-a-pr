@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: dns-request-ui
-          image: ghcr.io/simardeep1792/dns-request-ui:0a2cc1684354f76c1c235ea04610f5408f45c861
+          image: ghcr.io/simardeep1792/dns-request-ui:d4ad51e6da1a405672723a21d8b19d503fd94594
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
