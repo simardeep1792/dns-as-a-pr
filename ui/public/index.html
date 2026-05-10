@@ -3,23 +3,30 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>DNS Request UI</title>
+    <title>DNS Request Service</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
-    <main class="shell">
-      <section class="header-card">
-        <p class="eyebrow">dns-as-a-pr</p>
-        <h1>DNS Request UI</h1>
-        <p>Generate validated DNSEndpoint YAML and open a pull request through the provider adapter.</p>
+    <a class="skip-link" href="#main-content">Skip to main content</a>
+    <header class="gc-header">
+      <div class="gc-header-inner">
+        <p class="signature">Government-style service pattern</p>
+        <p class="service-name">DNS request service</p>
+      </div>
+      <div class="accent-bar"></div>
+    </header>
+    <main id="main-content" class="shell">
+      <section class="intro-card">
+        <h1>Request a DNS record change</h1>
+        <p>Submit a DNS request, review generated YAML, and create a pull request for approval.</p>
       </section>
 
       <section class="panel-grid">
         <form id="request-form" class="panel">
-          <h2>Request</h2>
+          <h2>Request details</h2>
 
           <label>Subdomain<input name="subdomain" required placeholder="blog" /></label>
 
@@ -34,20 +41,20 @@
           </label>
 
           <label>TTL<input name="recordTTL" type="number" min="1" value="300" required /></label>
-          <label>Owner<input name="owner" required placeholder="platform" /></label>
+          <label>Owner or team<input name="owner" required placeholder="platform" /></label>
           <label>Targets (one per line)
             <textarea name="targets" rows="5" required placeholder="203.0.113.10"></textarea>
           </label>
 
           <div class="actions">
             <button type="button" id="preview-btn">Preview YAML</button>
-            <button type="submit" id="submit-btn">Open Pull Request</button>
+            <button type="submit" id="submit-btn">Create pull request</button>
           </div>
         </form>
 
         <section class="panel output-panel">
-          <h2>Preview</h2>
-          <p id="meta" class="meta">Fill the form and preview before submitting.</p>
+          <h2>Generated manifest</h2>
+          <p id="meta" class="meta">Fill the form, preview the file, then create the pull request.</p>
           <pre id="yaml-preview"></pre>
           <p id="result" class="result"></p>
         </section>

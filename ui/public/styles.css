@@ -1,12 +1,11 @@
 :root {
-  --bg-a: #f8f4ec;
-  --bg-b: #dce8f6;
-  --ink: #1a1f2b;
-  --muted: #4b5a6d;
-  --line: #b7c6d8;
-  --card: rgba(255, 255, 255, 0.75);
-  --brand: #0f6f87;
-  --brand-2: #1f9e77;
+  --gc-blue: #26374a;
+  --gc-red: #a62a1e;
+  --gc-ink: #1b1b1b;
+  --gc-muted: #4f4f4f;
+  --gc-border: #d4d4d4;
+  --gc-panel: #ffffff;
+  --gc-bg: #f8f8f8;
 }
 
 * {
@@ -15,46 +14,80 @@
 
 body {
   margin: 0;
-  font-family: "Space Grotesk", sans-serif;
-  color: var(--ink);
-  background: radial-gradient(circle at 10% 10%, #fffaf2 0%, var(--bg-a) 40%, var(--bg-b) 100%);
+  font-family: "Noto Sans", sans-serif;
+  color: var(--gc-ink);
+  background: linear-gradient(180deg, #ffffff 0, #ffffff 82px, var(--gc-bg) 82px, var(--gc-bg) 100%);
+}
+
+.skip-link {
+  position: absolute;
+  left: -9999px;
+}
+
+.skip-link:focus {
+  left: 1rem;
+  top: 1rem;
+  z-index: 999;
+  background: #fff;
+  border: 2px solid var(--gc-blue);
+  padding: 0.45rem 0.75rem;
+}
+
+.gc-header {
+  background: #fff;
+  border-bottom: 1px solid var(--gc-border);
+}
+
+.gc-header-inner {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 0.9rem 1rem 0.65rem;
+}
+
+.signature {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--gc-muted);
+}
+
+.service-name {
+  margin: 0.25rem 0 0;
+  color: var(--gc-blue);
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+.accent-bar {
+  height: 4px;
+  background: linear-gradient(90deg, var(--gc-red), #d35649);
 }
 
 .shell {
   max-width: 1080px;
   margin: 0 auto;
-  padding: 2rem 1rem 3rem;
+  padding: 1.5rem 1rem 2.75rem;
 }
 
-.header-card,
+.intro-card,
 .panel {
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  backdrop-filter: blur(6px);
+  background: var(--gc-panel);
+  border: 1px solid var(--gc-border);
+  border-radius: 2px;
 }
 
-.header-card {
-  padding: 1.25rem 1.5rem;
+.intro-card {
+  padding: 1rem 1.25rem;
   margin-bottom: 1rem;
 }
 
-.eyebrow {
-  margin: 0;
-  color: var(--muted);
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-  font-size: 0.75rem;
-}
-
 h1 {
-  margin: 0.25rem 0 0.5rem;
-  font-size: clamp(1.6rem, 2.5vw, 2.4rem);
+  margin: 0;
+  font-size: clamp(1.45rem, 2.2vw, 2rem);
 }
 
 p {
-  margin: 0;
-  color: var(--muted);
+  margin: 0.5rem 0 0;
+  color: var(--gc-muted);
 }
 
 .panel-grid {
@@ -64,7 +97,7 @@ p {
 }
 
 .panel {
-  padding: 1rem;
+  padding: 1rem 1.1rem;
 }
 
 h2 {
@@ -74,7 +107,7 @@ h2 {
 label {
   display: block;
   margin-bottom: 0.75rem;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 input,
@@ -83,10 +116,24 @@ textarea,
 button {
   width: 100%;
   margin-top: 0.35rem;
-  border-radius: 10px;
-  border: 1px solid var(--line);
-  padding: 0.65rem 0.75rem;
+  border-radius: 2px;
+  border: 1px solid #8a8a8a;
+  padding: 0.6rem 0.7rem;
   font: inherit;
+}
+
+input,
+select,
+textarea {
+  border: 1px solid #6f6f6f;
+}
+
+input:focus,
+select:focus,
+textarea:focus,
+button:focus {
+  outline: 3px solid #ffbf47;
+  outline-offset: 0;
 }
 
 textarea {
@@ -110,8 +157,8 @@ textarea {
 }
 
 #submit-btn {
-  background: linear-gradient(100deg, var(--brand), var(--brand-2));
-  border: 0;
+  background: var(--gc-blue);
+  border-color: #1d2937;
   color: #fff;
 }
 
@@ -130,12 +177,12 @@ pre {
   margin: 0;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
-  font-family: "IBM Plex Mono", monospace;
+  font-family: "Roboto Mono", monospace;
   font-size: 0.83rem;
   line-height: 1.5;
-  border-radius: 12px;
-  border: 1px solid var(--line);
-  background: #f4f8fd;
+  border-radius: 2px;
+  border: 1px solid var(--gc-border);
+  background: #f3f3f3;
   min-height: 22rem;
   padding: 0.8rem;
 }

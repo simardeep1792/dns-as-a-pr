@@ -279,7 +279,7 @@ ExternalDNS-managed records have ownership TXT records prefixed with `edns-`.
 
 ## UI Service
 
-The UI service is now part of the platform and stays thin: it captures a DNS request, generates a `DNSEndpoint` manifest, creates a branch, and opens a pull request.
+The UI service is part of the platform and stays thin: capture a DNS request, generate a `DNSEndpoint`, create a branch, and open a pull request.
 
 ```text
 UI form -> generate YAML -> create branch -> open pull request -> CI -> merge -> ArgoCD -> ExternalDNS
@@ -287,46 +287,13 @@ UI form -> generate YAML -> create branch -> open pull request -> CI -> merge ->
 
 The UI never writes Cloud DNS directly and does not call GCP APIs. Git remains the source of truth.
 
-The provider seam should be small:
+Provider integration is intentionally small:
 
 ```text
 GitProvider.createBranch()
 GitProvider.upsertFile()
 GitProvider.openPullRequest()
 ```
-
-A concrete interface shape for the UI backend:
-
-```ts
-export type RecordType = "A" | "AAAA" | "CNAME" | "TXT" | "NS";
-
-export interface DnsRequest {
-  subdomain: string;
-  zone: "simardeep.xyz";
-  recordType: RecordType;
-  recordTTL: number;
-  targets: string[];
-  owner: string;
-}
-
-export interface GitProvider {
-  createBranch(input: { baseBranch: string; newBranch: string }): Promise<void>;
-  upsertFile(input: {
-    branch: string;
-    path: string;
-    content: string;
-    message: string;
-  }): Promise<void>;
-  openPullRequest(input: {
-    branch: string;
-    baseBranch: string;
-    title: string;
-    body: string;
-  }): Promise<{ url: string }>;
-}
-```
-
-If you want a draw.io-style visual artifact, keep Mermaid in this README as the source of truth and export the same diagrams to `docs/architecture.drawio` during release prep.
 
 Today that provider is GitHub. Later it can be Azure DevOps without changing the DNS registry, manifests, validation scripts, or ArgoCD/ExternalDNS flow.
 
@@ -356,13 +323,11 @@ export GIT_BASE_BRANCH=main
 
 ArgoCD deploys the UI from `k8s/apps/dns-request-ui` through `k8s/platform/25-dns-request-ui-app.yaml`.
 
-1. Build and push the UI image to `ghcr.io/simardeep1792/dns-request-ui:main`.
-2. Create the GitHub token secret:
+Required runtime secret:
 
 ```bash
 kubectl -n dns-ui create secret generic dns-request-ui-secrets \
   --from-literal=github-token='<github-token>'
 ```
 
-3. Sync the `dns-request-ui` ArgoCD app.
-4. Point `dns-ui.simardeep.xyz` to the ingress address.
+Image build and push are automated by `.github/workflows/ui-image.yml`.
