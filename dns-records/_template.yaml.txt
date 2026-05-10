@@ -4,8 +4,13 @@ metadata:
   # Unique name within the dns namespace.
   name: <subdomain>-simardeep-xyz
   namespace: dns
+  annotations:
+    simardeep.xyz/source-repository: "https://github.com/<org>/<repo>"
+    simardeep.xyz/zone-scope: "simardeep-xyz"
   labels:
-    # Optional: helps humans find who owns this record.
+    simardeep.xyz/controlled-by: "dns-as-a-pr"
+    simardeep.xyz/project-name: "<project-name>"
+    simardeep.xyz/project-id: "<project-id>"
     simardeep.xyz/owner: "<your-github-handle-or-team>"
 spec:
   endpoints:

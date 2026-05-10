@@ -12,3 +12,5 @@ yamllint -f parsable dns-records
   -schema-location default \
   -schema-location "schemas/{{.ResourceKind}}-{{.Group}}-{{.ResourceAPIVersion}}.json" \
   dns-records
+
+python3 scripts/validate-dns-metadata.py

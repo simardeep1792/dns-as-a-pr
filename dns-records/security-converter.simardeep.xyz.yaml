@@ -3,7 +3,13 @@ kind: DNSEndpoint
 metadata:
   name: security-converter-simardeep-xyz
   namespace: dns
+  annotations:
+    simardeep.xyz/source-repository: "https://github.com/PHACDataHub/sci-portal"
+    simardeep.xyz/zone-scope: "simardeep-xyz"
   labels:
+    simardeep.xyz/controlled-by: "phac-dns"
+    simardeep.xyz/project-name: "sci-portal"
+    simardeep.xyz/project-id: "pht-01hsv4d2m0n"
     simardeep.xyz/owner: "platform"
 spec:
   endpoints:

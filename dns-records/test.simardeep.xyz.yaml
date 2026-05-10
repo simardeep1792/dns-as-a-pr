@@ -3,7 +3,13 @@ kind: DNSEndpoint
 metadata:
   name: test-simardeep-xyz
   namespace: dns
+  annotations:
+    simardeep.xyz/source-repository: "https://github.com/simardeep1792/dns-as-a-pr"
+    simardeep.xyz/zone-scope: "simardeep-xyz"
   labels:
+    simardeep.xyz/controlled-by: "dns-as-a-pr"
+    simardeep.xyz/project-name: "dns-platform"
+    simardeep.xyz/project-id: "edip-aurora-fgc"
     simardeep.xyz/owner: "platform-test"
 spec:
   endpoints:

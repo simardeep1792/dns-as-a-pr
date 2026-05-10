@@ -118,7 +118,13 @@ kind: DNSEndpoint
 metadata:
   name: blog-simardeep-xyz
   namespace: dns
+  annotations:
+    simardeep.xyz/source-repository: "https://github.com/<org>/<repo>"
+    simardeep.xyz/zone-scope: "simardeep-xyz"
   labels:
+    simardeep.xyz/controlled-by: "dns-as-a-pr"
+    simardeep.xyz/project-name: "<project-name>"
+    simardeep.xyz/project-id: "<project-id>"
     simardeep.xyz/owner: "your-name-or-team"
 spec:
   endpoints:
@@ -130,6 +136,14 @@ spec:
 ```
 
 Supported record types are `A`, `AAAA`, `CNAME`, `TXT`, and `NS`.
+
+Required metadata contract:
+
+1. `metadata.labels` must include `simardeep.xyz/controlled-by`, `simardeep.xyz/project-name`, `simardeep.xyz/project-id`, and `simardeep.xyz/owner`.
+2. `metadata.annotations` must include `simardeep.xyz/source-repository` and `simardeep.xyz/zone-scope`.
+3. `simardeep.xyz/zone-scope` must be `simardeep-xyz`.
+
+This keeps ownership and traceability close to each record while staying compatible with ExternalDNS. Unlike KCC `DNSRecordSet`, this workflow does not use per-record `managedZoneRef`; zone targeting is controlled by ExternalDNS filters and the record `dnsName` domain.
 
 Use `NS` when you want to delegate a whole subdomain to another authoritative zone:
 

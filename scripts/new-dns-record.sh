@@ -4,10 +4,10 @@ set -euo pipefail
 usage() {
   cat <<'USAGE'
 Usage:
-  scripts/new-dns-record.sh --subdomain NAME --type TYPE --target VALUE [--target VALUE ...] [--ttl 300] [--owner OWNER]
+  scripts/new-dns-record.sh --subdomain NAME --type TYPE --target VALUE [--target VALUE ...] [--ttl 300] [--owner OWNER] [--project-name NAME] [--project-id ID] [--controlled-by VALUE] [--source-repo URL]
 
 Examples:
-  scripts/new-dns-record.sh --subdomain blog --type A --target 203.0.113.10 --owner platform
+  scripts/new-dns-record.sh --subdomain blog --type A --target 203.0.113.10 --owner platform --project-name dns-platform --project-id edip-aurora-fgc
   scripts/new-dns-record.sh --subdomain app --type CNAME --target app.example.net. --owner platform
   scripts/new-dns-record.sh --subdomain project --type NS --target ns-cloud-a1.googledomains.com --target ns-cloud-a2.googledomains.com --owner platform
 
@@ -20,6 +20,10 @@ SUBDOMAIN=""
 RECORD_TYPE=""
 TTL="300"
 OWNER="platform"
+PROJECT_NAME="dns-platform"
+PROJECT_ID="edip-aurora-fgc"
+CONTROLLED_BY="dns-as-a-pr"
+SOURCE_REPO="https://github.com/simardeep1792/dns-as-a-pr"
 TARGETS=()
 
 while [[ $# -gt 0 ]]; do
@@ -42,6 +46,22 @@ while [[ $# -gt 0 ]]; do
       ;;
     --owner)
       OWNER="${2:-}"
+      shift 2
+      ;;
+    --project-name)
+      PROJECT_NAME="${2:-}"
+      shift 2
+      ;;
+    --project-id)
+      PROJECT_ID="${2:-}"
+      shift 2
+      ;;
+    --controlled-by)
+      CONTROLLED_BY="${2:-}"
+      shift 2
+      ;;
+    --source-repo)
+      SOURCE_REPO="${2:-}"
       shift 2
       ;;
     -h|--help)
@@ -100,7 +120,13 @@ kind: DNSEndpoint
 metadata:
   name: $RESOURCE_NAME
   namespace: dns
+  annotations:
+    simardeep.xyz/source-repository: "$SOURCE_REPO"
+    simardeep.xyz/zone-scope: "simardeep-xyz"
   labels:
+    simardeep.xyz/controlled-by: "$CONTROLLED_BY"
+    simardeep.xyz/project-name: "$PROJECT_NAME"
+    simardeep.xyz/project-id: "$PROJECT_ID"
     simardeep.xyz/owner: "$OWNER"
 spec:
   endpoints:
