@@ -13,8 +13,7 @@
     <a class="skip-link" href="#main-content">Skip to main content</a>
     <header class="gc-header">
       <div class="gc-header-inner">
-        <p class="signature">Government-style service pattern</p>
-        <p class="service-name">DNS request service</p>
+        <p class="service-name">DNS as a PR</p>
       </div>
       <div class="accent-bar"></div>
     </header>
@@ -57,6 +56,13 @@
           <p id="meta" class="meta">Fill the form, preview the file, then create the pull request.</p>
           <pre id="yaml-preview"></pre>
           <p id="result" class="result"></p>
+
+          <section class="architecture">
+            <h3>How this works</h3>
+            <p>This service creates a pull request only. CI validates the manifest, then ArgoCD and ExternalDNS apply it after merge.</p>
+            <pre class="architecture-flow">UI -> Pull Request -> CI -> Merge -> ArgoCD -> DNSEndpoint -> ExternalDNS -> Cloud DNS</pre>
+            <p class="architecture-note">Git is the source of truth. The UI does not write Cloud DNS directly.</p>
+          </section>
         </section>
       </section>
     </main>

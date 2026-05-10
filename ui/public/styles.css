@@ -41,19 +41,13 @@ body {
 .gc-header-inner {
   max-width: 1080px;
   margin: 0 auto;
-  padding: 0.9rem 1rem 0.65rem;
-}
-
-.signature {
-  margin: 0;
-  font-size: 0.8rem;
-  color: var(--gc-muted);
+  padding: 0.85rem 1rem 0.65rem;
 }
 
 .service-name {
-  margin: 0.25rem 0 0;
+  margin: 0;
   color: var(--gc-blue);
-  font-size: 1.3rem;
+  font-size: 1.2rem;
   font-weight: 700;
 }
 
@@ -171,6 +165,28 @@ textarea {
 .result {
   margin-bottom: 0.8rem;
   font-size: 0.9rem;
+}
+
+.architecture {
+  margin-top: 1rem;
+  border-top: 1px solid var(--gc-border);
+  padding-top: 0.9rem;
+}
+
+.architecture h3 {
+  margin: 0;
+  font-size: 1.03rem;
+}
+
+.architecture-flow {
+  min-height: auto;
+  margin: 0.7rem 0;
+  background: #fff;
+}
+
+.architecture-note {
+  margin: 0;
+  font-size: 0.88rem;
 }
 
 pre {
