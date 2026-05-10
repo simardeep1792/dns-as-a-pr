@@ -104,6 +104,7 @@ GitHub is the current host, not a platform requirement. The reusable scripts in 
 |-- k8s/                  # ArgoCD bootstrap and ordered platform manifests
 |-- schemas/              # Local JSON schemas for CI validation
 |-- scripts/              # Portable validation, generation, and e2e scripts
+|-- ui/                   # DNS request web UI and API
 `-- README.md             # Product, operator, and contributor guide
 ```
 
@@ -276,15 +277,15 @@ ExternalDNS-managed records have ownership TXT records prefixed with `edns-`.
 3. DNS changes are reviewed through GitHub pull requests and `CODEOWNERS`.
 4. ExternalDNS is scoped to `simardeep.xyz` and public Cloud DNS zones.
 
-## Future UI
+## UI Service
 
-A UI makes sense, but it should stay thin. It should ask for subdomain, record type, TTL, owner, and targets, generate the same `DNSEndpoint` YAML as `scripts/new-dns-record.sh`, and open a pull request through a pluggable Git provider.
+The UI service is now part of the platform and stays thin: it captures a DNS request, generates a `DNSEndpoint` manifest, creates a branch, and opens a pull request.
 
 ```text
 UI form -> generate YAML -> create branch -> open pull request -> CI -> merge -> ArgoCD -> ExternalDNS
 ```
 
-The UI should never write Cloud DNS directly and should not talk to GCP. Git remains the source of truth.
+The UI never writes Cloud DNS directly and does not call GCP APIs. Git remains the source of truth.
 
 The provider seam should be small:
 
@@ -327,4 +328,41 @@ export interface GitProvider {
 
 If you want a draw.io-style visual artifact, keep Mermaid in this README as the source of truth and export the same diagrams to `docs/architecture.drawio` during release prep.
 
-Today that provider can be GitHub. Later it can be Azure DevOps without changing the DNS registry, manifests, validation scripts, or ArgoCD/ExternalDNS flow.
+Today that provider is GitHub. Later it can be Azure DevOps without changing the DNS registry, manifests, validation scripts, or ArgoCD/ExternalDNS flow.
+
+### Run UI Locally
+
+```bash
+cd ui
+npm install
+npm start
+```
+
+Open `http://localhost:8080`.
+
+Default mode is `dry-run` so it validates and generates YAML without creating a real pull request.
+
+Enable real GitHub pull request creation by setting:
+
+```bash
+export GIT_PROVIDER_MODE=github
+export GITHUB_TOKEN=<github-token>
+export GITHUB_REPO_OWNER=simardeep1792
+export GITHUB_REPO_NAME=dns-as-a-pr
+export GIT_BASE_BRANCH=main
+```
+
+### Deploy UI To GKE
+
+ArgoCD deploys the UI from `k8s/apps/dns-request-ui` through `k8s/platform/25-dns-request-ui-app.yaml`.
+
+1. Build and push the UI image to `ghcr.io/simardeep1792/dns-request-ui:main`.
+2. Create the GitHub token secret:
+
+```bash
+kubectl -n dns-ui create secret generic dns-request-ui-secrets \
+  --from-literal=github-token='<github-token>'
+```
+
+3. Sync the `dns-request-ui` ArgoCD app.
+4. Point `dns-ui.simardeep.xyz` to the ingress address.

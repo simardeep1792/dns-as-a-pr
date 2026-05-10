@@ -8,3 +8,7 @@ crash.log
 
 # Local kubeconfig artifacts
 *.kubeconfig
+
+# Node
+node_modules/
+npm-debug.log*

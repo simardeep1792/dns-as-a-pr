@@ -1,0 +1,141 @@
+:root {
+  --bg-a: #f8f4ec;
+  --bg-b: #dce8f6;
+  --ink: #1a1f2b;
+  --muted: #4b5a6d;
+  --line: #b7c6d8;
+  --card: rgba(255, 255, 255, 0.75);
+  --brand: #0f6f87;
+  --brand-2: #1f9e77;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Space Grotesk", sans-serif;
+  color: var(--ink);
+  background: radial-gradient(circle at 10% 10%, #fffaf2 0%, var(--bg-a) 40%, var(--bg-b) 100%);
+}
+
+.shell {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 2rem 1rem 3rem;
+}
+
+.header-card,
+.panel {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  backdrop-filter: blur(6px);
+}
+
+.header-card {
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.eyebrow {
+  margin: 0;
+  color: var(--muted);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+}
+
+h1 {
+  margin: 0.25rem 0 0.5rem;
+  font-size: clamp(1.6rem, 2.5vw, 2.4rem);
+}
+
+p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.panel-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(310px, 1fr));
+}
+
+.panel {
+  padding: 1rem;
+}
+
+h2 {
+  margin-top: 0;
+}
+
+label {
+  display: block;
+  margin-bottom: 0.75rem;
+  font-weight: 500;
+}
+
+input,
+select,
+textarea,
+button {
+  width: 100%;
+  margin-top: 0.35rem;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  padding: 0.65rem 0.75rem;
+  font: inherit;
+}
+
+textarea {
+  resize: vertical;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 1rem;
+}
+
+.actions button {
+  flex: 1;
+  min-width: 11rem;
+}
+
+#preview-btn {
+  background: #fff;
+}
+
+#submit-btn {
+  background: linear-gradient(100deg, var(--brand), var(--brand-2));
+  border: 0;
+  color: #fff;
+}
+
+.output-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.meta,
+.result {
+  margin-bottom: 0.8rem;
+  font-size: 0.9rem;
+}
+
+pre {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.83rem;
+  line-height: 1.5;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: #f4f8fd;
+  min-height: 22rem;
+  padding: 0.8rem;
+}

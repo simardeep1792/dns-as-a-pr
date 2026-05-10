@@ -1,0 +1,19 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: dns-request-ui
+  namespace: dns-ui
+  annotations:
+    kubernetes.io/ingress.class: gce
+spec:
+  rules:
+    - host: dns-ui.simardeep.xyz
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: dns-request-ui
+                port:
+                  number: 80

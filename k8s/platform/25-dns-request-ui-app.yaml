@@ -1,0 +1,22 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: dns-request-ui
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/simardeep1792/dns-as-a-pr.git
+    targetRevision: main
+    path: k8s/apps/dns-request-ui
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: dns-ui
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
