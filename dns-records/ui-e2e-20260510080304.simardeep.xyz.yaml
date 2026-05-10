@@ -1,0 +1,14 @@
+apiVersion: externaldns.k8s.io/v1alpha1
+kind: DNSEndpoint
+metadata:
+  name: ui-e2e-20260510080304-simardeep-xyz
+  namespace: dns
+  labels:
+    simardeep.xyz/owner: "platform"
+spec:
+  endpoints:
+    - dnsName: ui-e2e-20260510080304.simardeep.xyz
+      recordType: TXT
+      recordTTL: 300
+      targets:
+        - "ui-e2e"
