@@ -328,7 +328,7 @@ ArgoCD must authenticate to Azure Repos with a read-only PAT:
 kubectl -n argocd create secret generic repo-azure-dns-as-pr \
   --from-literal=type=git \
   --from-literal=url='https://dev.azure.com/EDIP-PIDE/dns-as-a-pr/_git/dns-as-a-pr' \
-  --from-literal=username='Simardeep.Singh19' \
+  --from-literal=username='<azure-devops-username>' \
   --from-literal=password='<azure-devops-read-pat>' \
   --dry-run=client -o yaml | kubectl apply -f -
 
