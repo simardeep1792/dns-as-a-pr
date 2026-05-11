@@ -1,0 +1,34 @@
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - k8s/*
+      - k8s/**/*
+      - scripts/validate-k8s.sh
+
+pr:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - k8s/*
+      - k8s/**/*
+      - scripts/validate-k8s.sh
+
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+  - checkout: self
+
+  - bash: |
+      set -euo pipefail
+      sudo pip3 install yamllint
+      curl -sSL -o /tmp/kubeconform.tar.gz https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz
+      tar -xzf /tmp/kubeconform.tar.gz -C /tmp
+      chmod +x /tmp/kubeconform
+      KUBECONFORM_BIN=/tmp/kubeconform scripts/validate-k8s.sh
+    displayName: Validate Kubernetes manifests

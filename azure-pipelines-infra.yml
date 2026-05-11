@@ -1,0 +1,38 @@
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - infra/*
+      - infra/**/*
+      - scripts/validate-infra.sh
+
+pr:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - infra/*
+      - infra/**/*
+      - scripts/validate-infra.sh
+
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+  - checkout: self
+
+  - bash: |
+      set -euo pipefail
+      TOFU_VERSION="1.9.1"
+      curl -sSL -o /tmp/tofu.zip "https://github.com/opentofu/opentofu/releases/download/v${TOFU_VERSION}/tofu_${TOFU_VERSION}_linux_amd64.zip"
+      python3 - <<'PY'
+import zipfile
+zipfile.ZipFile('/tmp/tofu.zip').extractall('/tmp')
+PY
+      chmod +x /tmp/tofu
+      sudo mv /tmp/tofu /usr/local/bin/tofu
+      scripts/validate-infra.sh
+    displayName: Validate OpenTofu configuration

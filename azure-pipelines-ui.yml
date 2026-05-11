@@ -1,0 +1,51 @@
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - ui/*
+      - ui/**/*
+      - azure-pipelines-ui.yml
+
+pr:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - ui/*
+      - ui/**/*
+      - azure-pipelines-ui.yml
+
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+  - checkout: self
+
+  - task: NodeTool@0
+    inputs:
+      versionSpec: "20.x"
+    displayName: Use Node.js 20
+
+  - bash: |
+      set -euo pipefail
+      cd ui
+      npm ci
+      node src/server.js >/tmp/dns-ui.log 2>&1 &
+      pid=$!
+      sleep 2
+      curl -fsS http://127.0.0.1:8080/api/health
+      kill "$pid"
+    displayName: Smoke test UI API
+
+  - task: Docker@2
+    inputs:
+      command: build
+      Dockerfile: ui/Dockerfile
+      repository: dns-request-ui
+      buildContext: ui
+      tags: |
+        $(Build.SourceVersion)
+    displayName: Build UI container

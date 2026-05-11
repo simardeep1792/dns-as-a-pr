@@ -93,7 +93,7 @@ sequenceDiagram
 
 The cluster is intentionally a control plane only. It does not host application traffic.
 
-GitHub is the current host, not a platform requirement. The reusable scripts in `scripts/` are the validation contract; GitHub Actions are only wrappers around those scripts. Azure DevOps can call the same scripts later.
+Azure DevOps is the target host. The reusable scripts in `scripts/` are the validation contract; CI pipelines are wrappers around those scripts so the same checks stay portable.
 
 ## Repository Layout
 
@@ -173,7 +173,7 @@ spec:
 2. Save it as `dns-records/<subdomain>.simardeep.xyz.yaml`.
 3. Set `metadata.name`, `metadata.labels.simardeep.xyz/owner`, `dnsName`, `recordType`, `recordTTL`, and `targets`.
 4. Open a pull request.
-5. Wait for GitHub Actions to pass.
+5. Wait for Azure Pipelines validation to pass.
 6. Merge the PR.
 7. ArgoCD and ExternalDNS reconcile the record automatically.
 
@@ -244,6 +244,15 @@ scripts/validate-dns.sh
 scripts/validate-k8s.sh
 scripts/validate-infra.sh
 ```
+
+## Azure Pipelines
+
+Use these pipeline definitions in Azure DevOps:
+
+1. `azure-pipelines-dns.yml`
+2. `azure-pipelines-k8s.yml`
+3. `azure-pipelines-infra.yml`
+4. `azure-pipelines-ui.yml`
 
 ## End-To-End Test
 
