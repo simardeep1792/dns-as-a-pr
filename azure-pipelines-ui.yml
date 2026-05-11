@@ -21,6 +21,12 @@ pr:
 pool:
   vmImage: ubuntu-latest
 
+variables:
+  GCP_PROJECT_ID: edip-aurora-fgc
+  GAR_REGION: northamerica-northeast1
+  GAR_REPOSITORY: dns-as-a-pr
+  GAR_IMAGE_NAME: dns-request-ui
+
 steps:
   - checkout: self
 
@@ -41,11 +47,51 @@ steps:
     displayName: Smoke test UI API
 
   - task: Docker@2
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
     inputs:
-      command: build
+      command: buildAndPush
+      containerRegistry: $(GAR_DOCKER_SERVICE_CONNECTION)
       Dockerfile: ui/Dockerfile
-      repository: dns-request-ui
+      repository: $(GAR_REGION)-docker.pkg.dev/$(GCP_PROJECT_ID)/$(GAR_REPOSITORY)/$(GAR_IMAGE_NAME)
       buildContext: ui
       tags: |
+        main
         $(Build.SourceVersion)
-    displayName: Build UI container
+    displayName: Build and push UI container to GAR
+
+  - bash: |
+      set -euo pipefail
+      if [ "$(Build.SourceBranch)" != "refs/heads/main" ]; then
+        echo "Skipping deployment manifest image update on non-main branch"
+        exit 0
+      fi
+
+      IMAGE="$(GAR_REGION)-docker.pkg.dev/$(GCP_PROJECT_ID)/$(GAR_REPOSITORY)/$(GAR_IMAGE_NAME):$(Build.SourceVersion)"
+      python3 - <<'PY'
+from pathlib import Path
+import os
+import re
+
+path = Path("k8s/apps/dns-request-ui/deployment.yaml")
+content = path.read_text()
+image = os.environ["IMAGE"]
+updated = re.sub(
+    r"image:\s*[^\s]+",
+    f"image: {image}",
+    content,
+    count=1,
+)
+path.write_text(updated)
+PY
+
+      if git diff --quiet -- k8s/apps/dns-request-ui/deployment.yaml; then
+        echo "No deployment image update needed"
+        exit 0
+      fi
+
+      git add k8s/apps/dns-request-ui/deployment.yaml
+      git -c user.name='azure-pipelines[bot]' -c user.email='azure-pipelines@local' commit -m "chore: pin dns-request-ui image to $(Build.SourceVersion)"
+      git push origin HEAD:main
+    env:
+      IMAGE: $(GAR_REGION)-docker.pkg.dev/$(GCP_PROJECT_ID)/$(GAR_REPOSITORY)/$(GAR_IMAGE_NAME):$(Build.SourceVersion)
+    displayName: Update deployment image tag

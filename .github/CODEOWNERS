@@ -1,9 +1,0 @@
-# Platform owner must review all changes that affect live DNS, platform config, or infra.
-
-/dns-records/** @simardeep1792
-/k8s/** @simardeep1792
-/infra/** @simardeep1792
-/schemas/** @simardeep1792
-/.github/** @simardeep1792
-/README.md @simardeep1792
-/scripts/** @simardeep1792

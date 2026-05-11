@@ -4,7 +4,7 @@ metadata:
   name: dns-ui-simardeep-xyz
   namespace: dns
   annotations:
-    simardeep.xyz/source-repository: "https://github.com/simardeep1792/dns-as-a-pr"
+    simardeep.xyz/source-repository: "https://dev.azure.com/EDIP-PIDE/dns-as-a-pr/_git/dns-as-a-pr"
     simardeep.xyz/zone-scope: "simardeep-xyz"
   labels:
     simardeep.xyz/controlled-by: "dns-as-a-pr"

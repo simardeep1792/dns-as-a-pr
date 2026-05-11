@@ -5,13 +5,13 @@ metadata:
   name: <subdomain>-simardeep-xyz
   namespace: dns
   annotations:
-    simardeep.xyz/source-repository: "https://github.com/<org>/<repo>"
+    simardeep.xyz/source-repository: "https://dev.azure.com/<organization>/<project>/_git/<repo>"
     simardeep.xyz/zone-scope: "simardeep-xyz"
   labels:
     simardeep.xyz/controlled-by: "dns-as-a-pr"
     simardeep.xyz/project-name: "<project-name>"
     simardeep.xyz/project-id: "<project-id>"
-    simardeep.xyz/owner: "<your-github-handle-or-team>"
+    simardeep.xyz/owner: "<your-team-or-requester-id>"
 spec:
   endpoints:
     - dnsName: <subdomain>.simardeep.xyz

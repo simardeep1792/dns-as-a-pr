@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: dns-request-ui
-          image: ghcr.io/simardeep1792/dns-request-ui:af5cfb75a88b3d8dc306f24c9261e2f9ae8eb5b3
+          image: northamerica-northeast1-docker.pkg.dev/edip-aurora-fgc/dns-as-a-pr/dns-request-ui:main
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
@@ -23,18 +23,20 @@ spec:
             - name: PORT
               value: "8080"
             - name: GIT_PROVIDER_MODE
-              value: github
+              value: azure-devops
             - name: GIT_BASE_BRANCH
               value: main
-            - name: GITHUB_REPO_OWNER
-              value: simardeep1792
-            - name: GITHUB_REPO_NAME
+            - name: AZDO_ORGANIZATION
+              value: EDIP-PIDE
+            - name: AZDO_PROJECT
               value: dns-as-a-pr
-            - name: GITHUB_TOKEN
+            - name: AZDO_REPOSITORY
+              value: dns-as-a-pr
+            - name: AZDO_TOKEN
               valueFrom:
                 secretKeyRef:
                   name: dns-request-ui-secrets
-                  key: github-token
+                  key: azdo-token
           resources:
             requests:
               cpu: 50m

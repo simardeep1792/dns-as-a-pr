@@ -23,7 +23,7 @@ OWNER="platform"
 PROJECT_NAME="dns-platform"
 PROJECT_ID="edip-aurora-fgc"
 CONTROLLED_BY="dns-as-a-pr"
-SOURCE_REPO="https://github.com/simardeep1792/dns-as-a-pr"
+SOURCE_REPO="https://dev.azure.com/EDIP-PIDE/dns-as-a-pr/_git/dns-as-a-pr"
 TARGETS=()
 
 while [[ $# -gt 0 ]]; do

@@ -10,15 +10,9 @@ The UI is a request layer only. It does not mutate Cloud DNS directly and does n
 
 ## Components
 
-```mermaid
-flowchart LR
-  Form[DNS Form] --> Validator[Input Validator]
-  Validator --> Preview[YAML Preview]
-  Preview --> Submit[Submit Request]
-  Submit --> Service[Request Service]
-  Service --> Generator[DNSEndpoint Generator]
-  Service --> Provider[GitProvider Adapter]
-  Provider --> PR[Pull Request URL]
+```text
+DNS form -> input validation -> YAML preview -> submit request
+submit request -> service -> DNSEndpoint generator -> Azure DevOps adapter -> pull request URL
 ```
 
 ## Input Contract
@@ -70,9 +64,8 @@ export interface GitProvider {
 }
 ```
 
-Implementations:
+Implementation:
 
-- `github` adapter (first)
-- `azure-devops` adapter (later)
+- `azure-devops` adapter
 
-No other platform code changes should be required for migration.
+No other platform code changes should be required when changing CI runners or registry providers.

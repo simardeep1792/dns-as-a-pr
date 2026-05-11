@@ -9,7 +9,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/simardeep1792/dns-as-a-pr.git
+    repoURL: https://dev.azure.com/EDIP-PIDE/dns-as-a-pr/_git/dns-as-a-pr
     targetRevision: main
     path: dns-records
   destination:

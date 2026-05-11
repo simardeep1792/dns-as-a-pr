@@ -20,22 +20,27 @@ class GitProvider {
   }
 }
 
-class GitHubProvider extends GitProvider {
-  constructor({ token, owner, repo }) {
+class AzureDevOpsProvider extends GitProvider {
+  constructor({ token, organization, project, repository }) {
     super();
     this.token = token;
-    this.owner = owner;
-    this.repo = repo;
-    this.apiBase = `https://api.github.com/repos/${owner}/${repo}`;
+    this.organization = organization;
+    this.project = project;
+    this.repository = repository;
+    this.apiBase = `https://dev.azure.com/${encodeURIComponent(organization)}/${encodeURIComponent(project)}/_apis/git/repositories/${encodeURIComponent(repository)}`;
+  }
+
+  get authHeader() {
+    const raw = `:${this.token}`;
+    return `Basic ${Buffer.from(raw, "utf8").toString("base64")}`;
   }
 
   async request(path, options = {}) {
-    const response = await fetch(`${this.apiBase}${path}`, {
+    const url = `${this.apiBase}${path}${path.includes("?") ? "&" : "?"}api-version=7.1`;
+    const response = await fetch(url, {
       ...options,
       headers: {
-        Accept: "application/vnd.github+json",
-        Authorization: `Bearer ${this.token}`,
-        "X-GitHub-Api-Version": "2022-11-28",
+        Authorization: this.authHeader,
         "Content-Type": "application/json",
         ...(options.headers || {})
       }
@@ -43,7 +48,7 @@ class GitHubProvider extends GitProvider {
 
     if (!response.ok) {
       const text = await response.text();
-      throw new Error(`github api ${response.status}: ${text}`);
+      throw new Error(`azure devops api ${response.status}: ${text}`);
     }
 
     if (response.status === 204) {
@@ -53,90 +58,114 @@ class GitHubProvider extends GitProvider {
     return response.json();
   }
 
-  async getBranchSha(branch) {
-    const data = await this.request(`/git/ref/heads/${encodeURIComponent(branch)}`);
-    return data.object.sha;
+  async getBranchObjectId(branch) {
+    const data = await this.request(`/refs?filter=${encodeURIComponent(`heads/${branch}`)}`);
+    const refs = data.value || [];
+    if (refs.length === 0) {
+      throw new Error(`branch '${branch}' not found`);
+    }
+    return refs[0].objectId;
   }
 
   async createBranch({ baseBranch, newBranch }) {
-    const baseSha = await this.getBranchSha(baseBranch);
-    await this.request("/git/refs", {
+    const oldObjectId = "0000000000000000000000000000000000000000";
+    const newObjectId = await this.getBranchObjectId(baseBranch);
+    await this.request("/refs", {
       method: "POST",
-      body: JSON.stringify({
-        ref: `refs/heads/${newBranch}`,
-        sha: baseSha
-      })
+      body: JSON.stringify([
+        {
+          name: `refs/heads/${newBranch}`,
+          oldObjectId,
+          newObjectId
+        }
+      ])
     });
   }
 
   async upsertFile({ branch, path, content, message }) {
-    let sha;
-    try {
-      const existing = await this.request(`/contents/${path}?ref=${encodeURIComponent(branch)}`);
-      sha = existing.sha;
-    } catch (_) {
-      sha = undefined;
+    const branchObjectId = await this.getBranchObjectId(branch);
+    const commit = {
+      comment: message,
+      changes: [
+        {
+          changeType: "add",
+          item: { path: `/${path}` },
+          newContent: {
+            content,
+            contentType: "rawtext"
+          }
+        }
+      ]
+    };
+
+    const existing = await this.fileExists(path, branch);
+    if (existing) {
+      commit.changes[0].changeType = "edit";
     }
 
-    await this.request(`/contents/${path}`, {
-      method: "PUT",
+    await this.request("/pushes", {
+      method: "POST",
       body: JSON.stringify({
-        message,
-        branch,
-        content: Buffer.from(content, "utf8").toString("base64"),
-        sha
+        refUpdates: [
+          {
+            name: `refs/heads/${branch}`,
+            oldObjectId: branchObjectId
+          }
+        ],
+        commits: [commit]
       })
     });
   }
 
   async openPullRequest({ branch, baseBranch, title, body }) {
-    const pr = await this.request("/pulls", {
+    const pr = await this.request("/pullrequests", {
       method: "POST",
       body: JSON.stringify({
+        sourceRefName: `refs/heads/${branch}`,
+        targetRefName: `refs/heads/${baseBranch}`,
         title,
-        body,
-        head: branch,
-        base: baseBranch
+        description: body
       })
     });
 
-    return { url: pr.html_url };
+    return {
+      url: pr.url,
+      webUrl: pr._links?.web?.href || ""
+    };
   }
 
   async fileExists(path, ref) {
     try {
-      await this.request(`/contents/${path}?ref=${encodeURIComponent(ref)}`);
-      return true;
+      const response = await this.request(`/items?path=${encodeURIComponent(`/${path}`)}&versionDescriptor.versionType=branch&versionDescriptor.version=${encodeURIComponent(ref)}&includeContent=false`);
+      return Boolean(response.path);
     } catch (_error) {
       return false;
     }
   }
 
   async getPullRequestStatus(prNumber) {
-    const pr = await this.request(`/pulls/${prNumber}`);
-    const checks = await this.request(`/commits/${pr.head.sha}/check-runs`);
-    let checksState = "pending";
+    const pr = await this.request(`/pullrequests/${prNumber}`);
+    const statuses = await this.request(`/pullRequests/${prNumber}/statuses`);
+    const entries = statuses.value || [];
 
-    const checkRuns = checks.check_runs || [];
-    if (checkRuns.length > 0) {
-      if (checkRuns.some((run) => run.status !== "completed")) {
-        checksState = "pending";
-      } else if (checkRuns.some((run) => run.conclusion !== "success")) {
+    let checksState = "pending";
+    if (entries.length > 0) {
+      if (entries.some((status) => String(status.state || "").toLowerCase() === "failed")) {
         checksState = "failed";
-      } else {
+      } else if (entries.every((status) => String(status.state || "").toLowerCase() === "succeeded")) {
         checksState = "success";
       }
     }
 
     return {
-      number: pr.number,
-      state: pr.state,
-      merged: Boolean(pr.merged_at),
+      number: pr.pullRequestId,
+      state: pr.status,
+      merged: pr.status === "completed",
       checksState,
-      checks: checkRuns.map((run) => ({
-        name: run.name,
-        status: run.status,
-        conclusion: run.conclusion || "pending"
+      checks: entries.map((status) => ({
+        name: status.context?.name || status.description || "status",
+        status: status.state || "pending",
+        conclusion: status.state || "pending"
       }))
     };
   }
@@ -168,15 +197,19 @@ class DryRunProvider extends GitProvider {
 
 function createProviderFromEnv() {
   const mode = process.env.GIT_PROVIDER_MODE || "dry-run";
-  if (mode === "github") {
-    const token = process.env.GITHUB_TOKEN;
-    const owner = process.env.GITHUB_REPO_OWNER;
-    const repo = process.env.GITHUB_REPO_NAME;
-    if (!token || !owner || !repo) {
-      throw new Error("github mode requires GITHUB_TOKEN, GITHUB_REPO_OWNER, GITHUB_REPO_NAME");
+  if (mode === "azure-devops") {
+    const token = process.env.AZDO_TOKEN;
+    const organization = process.env.AZDO_ORGANIZATION;
+    const project = process.env.AZDO_PROJECT;
+    const repository = process.env.AZDO_REPOSITORY;
+
+    if (!token || !organization || !project || !repository) {
+      throw new Error(
+        "azure-devops mode requires AZDO_TOKEN, AZDO_ORGANIZATION, AZDO_PROJECT, AZDO_REPOSITORY"
+      );
     }
 
-    return new GitHubProvider({ token, owner, repo });
+    return new AzureDevOpsProvider({ token, organization, project, repository });
   }
 
   return new DryRunProvider();

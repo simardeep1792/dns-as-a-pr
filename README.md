@@ -4,82 +4,55 @@
 
 The contract is simple: a DNS change is a pull request. After the request is merged, ArgoCD applies the `DNSEndpoint` manifest to the GKE control-plane cluster and ExternalDNS reconciles it into Google Cloud DNS. No service account keys, no manual DNS console work after merge.
 
-```mermaid
-flowchart LR
-  Requester[Requester] --> PR[Pull request]
-  PR --> Main[Git main branch]
-  Main --> Argo[ArgoCD sync]
-  Argo --> Endpoint[DNSEndpoint CRD]
-  Endpoint --> ExternalDNS[ExternalDNS reconcile]
-  ExternalDNS --> CloudDNS[Google Cloud DNS]
+```text
+Requester
+  -> Pull request in Azure Repos
+  -> Merge to main
+  -> ArgoCD sync on GKE
+  -> DNSEndpoint reconcile by ExternalDNS
+  -> Google Cloud DNS
 ```
 
 ## Architecture
 
 This platform keeps a narrow responsibility boundary: request and review DNS in Git, then let GitOps and controllers reconcile state.
 
-```mermaid
-flowchart TB
-  subgraph UX[Request Surface]
-    UI[Web UI or CLI]
-  end
-
-  subgraph App[Request Service]
-    API[DNS Request API]
-    Generator[DNSEndpoint generator]
-    Adapter[Git provider adapter]
-  end
-
-  subgraph Git[Git Platform]
-    Repo[(dns-as-a-pr repository)]
-    CI[Validation pipeline]
-  end
-
-  subgraph Cluster[GKE Control Plane]
-    ArgoCD[ArgoCD]
-    CRD[DNSEndpoint objects]
-    EXDNS[ExternalDNS]
-  end
-
-  subgraph DNS[Authoritative DNS]
-    GCloudDNS[Google Cloud DNS zone]
-  end
-
-  UI --> API
-  API --> Generator
-  API --> Adapter
-  Adapter --> Repo
-  Repo --> CI
-  CI --> Repo
-  Repo --> ArgoCD
-  ArgoCD --> CRD
-  CRD --> EXDNS
-  EXDNS --> GCloudDNS
+```text
+Request surface
+  UI / CLI
+      |
+      v
+Request service
+  - input validation
+  - DNSEndpoint generation
+  - Azure Repos adapter
+      |
+      v
+Azure DevOps
+  - Azure Repos (source of truth)
+  - Azure Pipelines (validation/build)
+      |
+      v
+GKE control plane
+  - ArgoCD
+  - DNSEndpoint objects
+  - ExternalDNS
+      |
+      v
+Google Cloud DNS
 ```
 
 ### Request Lifecycle
 
-```mermaid
-sequenceDiagram
-  actor User
-  participant UI as UI/CLI
-  participant API as Request API
-  participant Git as Git Provider
-  participant CI as CI Validation
-  participant Argo as ArgoCD
-  participant Ex as ExternalDNS
-  participant DNS as Cloud DNS
-
-  User->>UI: Submit subdomain, type, ttl, targets, owner
-  UI->>API: Create DNS request
-  API->>Git: Create branch and commit DNSEndpoint YAML
-  API->>Git: Open pull request
-  Git->>CI: Trigger validation
-  CI-->>Git: Pass/fail status
-  User->>Git: Merge pull request
-  Git->>Argo: New commit on main
-  Argo->>Ex: Apply manifests
-  Ex->>DNS: Upsert record sets
+```text
+User submits request in UI
+  -> API validates metadata and record targets
+  -> API writes DNSEndpoint YAML in Azure Repos branch
+  -> API opens Azure DevOps pull request
+  -> Azure Pipelines validates the change
+  -> PR merge to main
+  -> ArgoCD syncs from Azure Repos
+  -> ExternalDNS updates Google Cloud DNS
 ```
 
 ## What This Runs
@@ -119,7 +92,7 @@ metadata:
   name: blog-simardeep-xyz
   namespace: dns
   annotations:
-    simardeep.xyz/source-repository: "https://github.com/<org>/<repo>"
+    simardeep.xyz/source-repository: "https://dev.azure.com/<organization>/<project>/_git/<repo>"
     simardeep.xyz/zone-scope: "simardeep-xyz"
   labels:
     simardeep.xyz/controlled-by: "dns-as-a-pr"
@@ -254,6 +227,8 @@ Use these pipeline definitions in Azure DevOps:
 3. `azure-pipelines-infra.yml`
 4. `azure-pipelines-ui.yml`
 
+`azure-pipelines-ui.yml` expects a Docker service connection named by `GAR_DOCKER_SERVICE_CONNECTION` that authenticates to Google Artifact Registry using Workload Identity Federation.
+
 ## End-To-End Test
 
 Run the live DNS test from the repo root:
@@ -297,7 +272,7 @@ ExternalDNS-managed records have ownership TXT records prefixed with `edns-`.
 
 1. GCP auth uses Workload Identity. There are no service account keys.
 2. ExternalDNS writes only through the dedicated Google service account.
-3. DNS changes are reviewed through GitHub pull requests and `CODEOWNERS`.
+3. DNS changes are reviewed through Azure DevOps pull requests and branch policies.
 4. ExternalDNS is scoped to `simardeep.xyz` and public Cloud DNS zones.
 
 ## UI Service
@@ -318,7 +293,7 @@ GitProvider.upsertFile()
 GitProvider.openPullRequest()
 ```
 
-Today that provider is GitHub. Later it can be Azure DevOps without changing the DNS registry, manifests, validation scripts, or ArgoCD/ExternalDNS flow.
+The provider in this repository targets Azure DevOps.
 
 ### Run UI Locally
 
@@ -332,13 +307,14 @@ Open `http://localhost:8080`.
 
 Default mode is `dry-run` so it validates and generates YAML without creating a real pull request.
 
-Enable real GitHub pull request creation by setting:
+Enable real Azure DevOps pull request creation by setting:
 
 ```bash
-export GIT_PROVIDER_MODE=github
-export GITHUB_TOKEN=<github-token>
-export GITHUB_REPO_OWNER=simardeep1792
-export GITHUB_REPO_NAME=dns-as-a-pr
+export GIT_PROVIDER_MODE=azure-devops
+export AZDO_TOKEN=<azure-devops-pat>
+export AZDO_ORGANIZATION=EDIP-PIDE
+export AZDO_PROJECT=dns-as-a-pr
+export AZDO_REPOSITORY=dns-as-a-pr
 export GIT_BASE_BRANCH=main
 ```
 
@@ -346,11 +322,24 @@ export GIT_BASE_BRANCH=main
 
 ArgoCD deploys the UI from `k8s/apps/dns-request-ui` through `k8s/platform/25-dns-request-ui-app.yaml`.
 
+ArgoCD must authenticate to Azure Repos with a read-only PAT:
+
+```bash
+kubectl -n argocd create secret generic repo-azure-dns-as-pr \
+  --from-literal=type=git \
+  --from-literal=url='https://dev.azure.com/EDIP-PIDE/dns-as-a-pr/_git/dns-as-a-pr' \
+  --from-literal=username='Simardeep.Singh19' \
+  --from-literal=password='<azure-devops-read-pat>' \
+  --dry-run=client -o yaml | kubectl apply -f -
+
+kubectl -n argocd label secret repo-azure-dns-as-pr argocd.argoproj.io/secret-type=repository --overwrite
+```
+
 Required runtime secret:
 
 ```bash
 kubectl -n dns-ui create secret generic dns-request-ui-secrets \
-  --from-literal=github-token='<github-token>'
+  --from-literal=azdo-token='<azure-devops-pat>'
 ```
 
-Image build and push are automated by `.github/workflows/ui-image.yml`.
+Image build and push are automated by `azure-pipelines-ui.yml`.

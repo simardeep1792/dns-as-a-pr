@@ -65,8 +65,16 @@ function parsePullRequestNumber(value) {
   try {
     const url = new URL(value);
     const parts = url.pathname.split("/").filter(Boolean);
-    if (parts.length >= 4 && parts[2] === "pull") {
-      return Number(parts[3]);
+    const pullIndex = parts.indexOf("pull");
+    if (pullIndex >= 0 && parts[pullIndex + 1]) {
+      return Number(parts[pullIndex + 1]);
+    }
+    const gitIndex = parts.indexOf("_git");
+    if (gitIndex >= 0) {
+      const token = parts[parts.length - 1];
+      if (token && /^\d+$/.test(token)) {
+        return Number(token);
+      }
     }
   } catch (_error) {
     return Number(value);
@@ -203,8 +211,8 @@ app.post("/api/requests", async (req, res) => {
     });
 
     res.status(201).json({
-      url: pr.url,
-      pullRequestNumber: parsePullRequestNumber(pr.url),
+      url: pr.webUrl || pr.url,
+      pullRequestNumber: parsePullRequestNumber(pr.webUrl || pr.url),
       branch: artifacts.branch,
       filePath: artifacts.filePath
     });
