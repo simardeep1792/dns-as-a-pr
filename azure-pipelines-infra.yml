@@ -29,9 +29,9 @@ steps:
       TOFU_VERSION="1.9.1"
       curl -sSL -o /tmp/tofu.zip "https://github.com/opentofu/opentofu/releases/download/v${TOFU_VERSION}/tofu_${TOFU_VERSION}_linux_amd64.zip"
       python3 - <<'PY'
-import zipfile
-zipfile.ZipFile('/tmp/tofu.zip').extractall('/tmp')
-PY
+      import zipfile
+      zipfile.ZipFile('/tmp/tofu.zip').extractall('/tmp')
+      PY
       chmod +x /tmp/tofu
       sudo mv /tmp/tofu /usr/local/bin/tofu
       scripts/validate-infra.sh

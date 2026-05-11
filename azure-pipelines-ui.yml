@@ -68,21 +68,21 @@ steps:
 
       IMAGE="$(GAR_REGION)-docker.pkg.dev/$(GCP_PROJECT_ID)/$(GAR_REPOSITORY)/$(GAR_IMAGE_NAME):$(Build.SourceVersion)"
       python3 - <<'PY'
-from pathlib import Path
-import os
-import re
+      from pathlib import Path
+      import os
+      import re
 
-path = Path("k8s/apps/dns-request-ui/deployment.yaml")
-content = path.read_text()
-image = os.environ["IMAGE"]
-updated = re.sub(
-    r"image:\s*[^\s]+",
-    f"image: {image}",
-    content,
-    count=1,
-)
-path.write_text(updated)
-PY
+      path = Path("k8s/apps/dns-request-ui/deployment.yaml")
+      content = path.read_text()
+      image = os.environ["IMAGE"]
+      updated = re.sub(
+          r"image:\s*[^\s]+",
+          f"image: {image}",
+          content,
+          count=1,
+      )
+      path.write_text(updated)
+      PY
 
       if git diff --quiet -- k8s/apps/dns-request-ui/deployment.yaml; then
         echo "No deployment image update needed"
