@@ -1,0 +1,20 @@
+apiVersion: externaldns.k8s.io/v1alpha1
+kind: DNSEndpoint
+metadata:
+  name: ado-e2e-20260511104030-simardeep-xyz
+  namespace: dns
+  annotations:
+    simardeep.xyz/source-repository: "https://dev.azure.com/EDIP-PIDE/dns-as-a-pr/_git/dns-as-a-pr"
+    simardeep.xyz/zone-scope: "simardeep-xyz"
+  labels:
+    simardeep.xyz/controlled-by: "dns-as-a-pr"
+    simardeep.xyz/project-name: "dns-as-a-pr"
+    simardeep.xyz/project-id: "edip-aurora-fgc"
+    simardeep.xyz/owner: "platform"
+spec:
+  endpoints:
+    - dnsName: ado-e2e-20260511104030.simardeep.xyz
+      recordType: A
+      recordTTL: 300
+      targets:
+        - 203.0.113.10
