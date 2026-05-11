@@ -128,9 +128,12 @@ class AzureDevOpsProvider extends GitProvider {
       })
     });
 
+    const webUrl = `https://dev.azure.com/${encodeURIComponent(this.organization)}/${encodeURIComponent(this.project)}/_git/${encodeURIComponent(this.repository)}/pullrequest/${pr.pullRequestId}`;
+
     return {
-      url: pr.url,
-      webUrl: pr._links?.web?.href || ""
+      url: webUrl,
+      webUrl,
+      number: pr.pullRequestId
     };
   }
 

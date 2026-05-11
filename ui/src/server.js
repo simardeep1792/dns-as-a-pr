@@ -212,7 +212,7 @@ app.post("/api/requests", async (req, res) => {
 
     res.status(201).json({
       url: pr.webUrl || pr.url,
-      pullRequestNumber: parsePullRequestNumber(pr.webUrl || pr.url),
+      pullRequestNumber: pr.number || parsePullRequestNumber(pr.webUrl || pr.url),
       branch: artifacts.branch,
       filePath: artifacts.filePath
     });
