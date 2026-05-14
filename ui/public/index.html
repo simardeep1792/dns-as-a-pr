@@ -3,138 +3,350 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>DNS as a PR</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <title>Website Address Setup</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
-    <a class="skip-link" href="#main-content">Skip to main content</a>
-    <header class="gc-header">
-      <div class="gc-header-inner">
-        <p class="service-name">DNS as a PR</p>
-        <p class="service-tagline">Create a DNS change request, open an Azure DevOps pull request, and let GitOps reconcile the approved state.</p>
+    <!-- Skip to content link -->
+    <a class="visually-hidden-focusable" href="#main-content">Skip to main content</a>
+    
+    <!-- Header -->
+    <header class="bg-primary text-white py-3">
+      <div class="container">
+        <div class="row align-items-center">
+          <div class="col">
+            <h1 class="h4 mb-0">Website Address Setup</h1>
+            <p class="mb-0 text-white-50">Simple way to configure your website addresses</p>
+          </div>
+          <div class="col-auto">
+            <button class="btn btn-outline-light btn-sm" id="view-requests-btn">
+              <i class="fas fa-list me-1"></i> View My Requests
+            </button>
+          </div>
+        </div>
       </div>
-      <div class="accent-bar"></div>
     </header>
 
-    <main id="main-content" class="shell">
-      <section class="hero-card">
-        <div>
-          <p class="eyebrow">Azure DevOps-first request flow</p>
-          <h1>Request a DNS record change</h1>
-          <p class="hero-copy">This UI prepares a `DNSEndpoint` manifest and opens an Azure DevOps pull request. It does not write Cloud DNS directly.</p>
+    <!-- Progress indicator -->
+    <div class="bg-light border-bottom" id="progress-bar" style="display: none;">
+      <div class="container">
+        <div class="row py-2">
+          <div class="col">
+            <div class="d-flex align-items-center">
+              <span class="badge bg-primary me-2" id="step-number">1</span>
+              <span id="step-title">Choose what you want to do</span>
+              <div class="ms-auto">
+                <small class="text-muted" id="step-progress">Step 1 of 4</small>
+              </div>
+            </div>
+          </div>
         </div>
-        <div class="hero-flow">
-          <p>Request</p>
-          <p>Validate</p>
-          <p>Open PR</p>
-          <p>Merge</p>
-          <p>Reconcile</p>
+      </div>
+    </div>
+
+    <main id="main-content" class="container py-4">
+      
+      <!-- Landing Screen -->
+      <div id="landing-screen">
+        <div class="row justify-content-center">
+          <div class="col-lg-8">
+            <div class="text-center mb-5">
+              <div class="display-1 text-primary mb-3">🌐</div>
+              <h1 class="display-5 fw-bold mb-3">Need to set up a website address?</h1>
+              <p class="lead text-muted">We'll help you create a DNS request in just a few simple steps.</p>
+            </div>
+
+            <div class="card border-0 shadow-sm">
+              <div class="card-body p-4">
+                <h2 class="h4 mb-4">What do you want to do?</h2>
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <button class="btn btn-outline-primary h-100 w-100 p-3 text-start task-option" data-task="point-website">
+                      <div class="d-flex align-items-start">
+                        <i class="fas fa-server text-primary me-3 mt-1"></i>
+                        <div>
+                          <h5 class="mb-1">Point my website to a server</h5>
+                          <small class="text-muted">Connect your domain to an IP address</small>
+                          <div class="badge bg-light text-dark mt-2">A Record</div>
+                        </div>
+                      </div>
+                    </button>
+                  </div>
+                  <div class="col-md-6">
+                    <button class="btn btn-outline-primary h-100 w-100 p-3 text-start task-option" data-task="redirect-website">
+                      <div class="d-flex align-items-start">
+                        <i class="fas fa-external-link-alt text-primary me-3 mt-1"></i>
+                        <div>
+                          <h5 class="mb-1">Redirect to another website</h5>
+                          <small class="text-muted">Forward visitors to a different domain</small>
+                          <div class="badge bg-light text-dark mt-2">CNAME</div>
+                        </div>
+                      </div>
+                    </button>
+                  </div>
+                  <div class="col-md-6">
+                    <button class="btn btn-outline-primary h-100 w-100 p-3 text-start task-option" data-task="email-verification">
+                      <div class="d-flex align-items-start">
+                        <i class="fas fa-envelope-open-text text-primary me-3 mt-1"></i>
+                        <div>
+                          <h5 class="mb-1">Set up email verification</h5>
+                          <small class="text-muted">Add verification codes or SPF records</small>
+                          <div class="badge bg-light text-dark mt-2">TXT Record</div>
+                        </div>
+                      </div>
+                    </button>
+                  </div>
+                  <div class="col-md-6">
+                    <button class="btn btn-outline-primary h-100 w-100 p-3 text-start task-option" data-task="custom-nameservers">
+                      <div class="d-flex align-items-start">
+                        <i class="fas fa-network-wired text-primary me-3 mt-1"></i>
+                        <div>
+                          <h5 class="mb-1">Configure custom nameservers</h5>
+                          <small class="text-muted">Delegate DNS to another provider</small>
+                          <div class="badge bg-light text-dark mt-2">NS Record</div>
+                        </div>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+                
+                <div class="text-center mt-4">
+                  <p class="text-muted small mb-0">
+                    <i class="fas fa-shield-alt me-1"></i>
+                    All requests are reviewed and approved through a secure process
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-      </section>
+      </div>
 
-      <section class="panel-grid">
-        <form id="request-form" class="panel request-panel">
-          <div class="panel-heading">
-            <div>
-              <h2>Create request</h2>
-              <p>Fill in the DNS record details, then validate before opening the Azure DevOps pull request.</p>
+      <!-- Step 1: Website Details -->
+      <div id="step1-screen" class="step-screen" style="display: none;">
+        <div class="row justify-content-center">
+          <div class="col-lg-6">
+            <div class="card border-0 shadow-sm">
+              <div class="card-body p-4">
+                <div class="text-center mb-4">
+                  <i class="fas fa-server text-primary fa-2x mb-2"></i>
+                  <h2 class="h4">Point your website to a server</h2>
+                  <p class="text-muted">We'll connect your domain to an IP address</p>
+                </div>
+
+                <form id="step1-form">
+                  <div class="mb-3">
+                    <label for="website-name" class="form-label fw-semibold">What's your website address?</label>
+                    <div class="input-group">
+                      <input type="text" class="form-control" id="website-name" placeholder="blog" required>
+                      <span class="input-group-text">.simardeep.xyz</span>
+                    </div>
+                    <div class="form-text">Enter the subdomain part (e.g., "blog" for blog.simardeep.xyz)</div>
+                  </div>
+
+                  <div class="mb-3" id="target-input-container">
+                    <label for="server-ip" class="form-label fw-semibold" id="target-label">What's your server's IP address?</label>
+                    <input type="text" class="form-control" id="server-ip" placeholder="192.168.1.100" required>
+                    <div class="form-text" id="target-help">This is where visitors will be sent (IPv4 address)</div>
+                  </div>
+
+                  <div class="mb-4">
+                    <label for="ttl-select" class="form-label fw-semibold">How long should this be remembered?</label>
+                    <select class="form-select" id="ttl-select" required>
+                      <option value="300" selected>5 minutes (recommended for testing)</option>
+                      <option value="900">15 minutes</option>
+                      <option value="3600">1 hour (good for production)</option>
+                      <option value="86400">24 hours (for stable sites)</option>
+                    </select>
+                    <div class="form-text">Shorter times mean changes happen faster, but may be less efficient</div>
+                  </div>
+
+                  <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <button type="button" class="btn btn-outline-secondary" id="step1-back">
+                      <i class="fas fa-arrow-left me-1"></i> Back
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                      Continue <i class="fas fa-arrow-right ms-1"></i>
+                    </button>
+                  </div>
+                </form>
+              </div>
             </div>
           </div>
+        </div>
+      </div>
 
-          <section class="form-section">
-            <h3>Record</h3>
-            <div class="field-grid two-up">
-              <label>Subdomain<input name="subdomain" required placeholder="blog" /></label>
-              <label>Record type
-                <select name="recordType" id="record-type" required>
-                  <option>A</option>
-                  <option>AAAA</option>
-                  <option>CNAME</option>
-                  <option>TXT</option>
-                  <option>NS</option>
-                </select>
-              </label>
-            </div>
-            <div class="field-grid two-up compact-row">
-              <label>TTL<input name="recordTTL" type="number" min="60" max="86400" value="300" required /></label>
-              <div class="field-note-card">
-                <p class="field-note-title">Target guidance</p>
-                <p id="target-help" class="field-help">For A records, enter IPv4 values such as 203.0.113.10.</p>
+      <!-- Step 2: Contact Information -->
+      <div id="step2-screen" class="step-screen" style="display: none;">
+        <div class="row justify-content-center">
+          <div class="col-lg-6">
+            <div class="card border-0 shadow-sm">
+              <div class="card-body p-4">
+                <div class="text-center mb-4">
+                  <i class="fas fa-users text-primary fa-2x mb-2"></i>
+                  <h2 class="h4">Who's responsible for this?</h2>
+                  <p class="text-muted">We need to know who to contact about this request</p>
+                </div>
+
+                <form id="step2-form">
+                  <div class="mb-3">
+                    <label for="team-name" class="form-label fw-semibold">Team or department</label>
+                    <input type="text" class="form-control" id="team-name" placeholder="Platform Team" required>
+                    <div class="form-text">Which team is requesting this change?</div>
+                  </div>
+
+                  <div class="mb-3">
+                    <label for="project-name" class="form-label fw-semibold">Project name</label>
+                    <input type="text" class="form-control" id="project-name" placeholder="Science Portal" required>
+                    <div class="form-text">What project is this website part of?</div>
+                  </div>
+
+                  <div class="mb-3">
+                    <label for="project-id" class="form-label fw-semibold">Project ID (optional)</label>
+                    <input type="text" class="form-control" id="project-id" placeholder="SCI-2024-001">
+                    <div class="form-text">Project reference number or ID (will be auto-generated if left blank)</div>
+                  </div>
+
+                  <div class="mb-4">
+                    <label for="source-repo" class="form-label fw-semibold">Source repository (optional)</label>
+                    <input type="url" class="form-control" id="source-repo" placeholder="https://dev.azure.com/org/project/_git/repo">
+                    <div class="form-text">Azure DevOps repository URL (defaults to main repo if left blank)</div>
+                  </div>
+
+                  <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <button type="button" class="btn btn-outline-secondary" id="step2-back">
+                      <i class="fas fa-arrow-left me-1"></i> Back
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                      Continue <i class="fas fa-arrow-right ms-1"></i>
+                    </button>
+                  </div>
+                </form>
               </div>
-            </div>
-            <label>Targets (one per line)
-              <textarea name="targets" rows="6" required placeholder="203.0.113.10"></textarea>
-            </label>
-          </section>
-
-          <section class="form-section">
-            <h3>Ownership and traceability</h3>
-            <div class="field-grid two-up">
-              <label>Controlled by<input name="controlledBy" required value="dns-as-a-pr" /></label>
-              <label>Owner or team<input name="owner" required placeholder="platform" /></label>
-              <label>Project name<input name="projectName" required placeholder="sci-portal" /></label>
-              <label>Project ID<input name="projectId" required placeholder="pht-01hsv4d2m0n" /></label>
-            </div>
-            <label>Source repository<input name="sourceRepository" type="url" required placeholder="https://dev.azure.com/org/project/_git/repo" /></label>
-          </section>
-
-          <section class="form-section submit-section">
-            <div class="submit-copy">
-              <h3>Validate and open pull request</h3>
-              <p>Validation checks for policy issues and duplicate record files. The pull request button stays disabled until validation passes.</p>
-            </div>
-            <div class="actions submit-actions">
-              <button type="button" id="preview-btn">Validate request</button>
-              <button type="submit" id="submit-btn" disabled>Create Azure DevOps pull request</button>
-            </div>
-          </section>
-        </form>
-
-        <section class="panel review-panel">
-          <div class="panel-heading">
-            <div>
-              <h2>Review package</h2>
-              <p id="meta" class="meta">Validate the request to see the generated manifest, destination, and pull request summary.</p>
             </div>
           </div>
+        </div>
+      </div>
 
-          <div class="review-stack">
-            <div id="destination" class="destination-card"></div>
-            <div id="checks" class="checks card-block"></div>
-            <div id="pr-summary" class="summary-card card-block"></div>
-            <p id="result" class="result"></p>
-            <div class="review-block">
-              <div class="review-block-header">
-                <h3>Generated manifest</h3>
+      <!-- Step 3: Review -->
+      <div id="step3-screen" class="step-screen" style="display: none;">
+        <div class="row justify-content-center">
+          <div class="col-lg-8">
+            <div class="card border-0 shadow-sm">
+              <div class="card-body p-4">
+                <div class="text-center mb-4">
+                  <i class="fas fa-check-circle text-success fa-2x mb-2"></i>
+                  <h2 class="h4">Review your request</h2>
+                  <p class="text-muted">Make sure everything looks correct before submitting</p>
+                </div>
+
+                <div class="row">
+                  <div class="col-md-6">
+                    <h5 class="text-primary">Website Details</h5>
+                    <div class="mb-3">
+                      <strong>Website:</strong> <span id="review-website"></span><br>
+                      <strong>Points to:</strong> <span id="review-ip"></span><br>
+                      <strong>Cache time:</strong> <span id="review-ttl"></span>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <h5 class="text-primary">Contact Information</h5>
+                    <div class="mb-3">
+                      <strong>Team:</strong> <span id="review-team"></span><br>
+                      <strong>Project:</strong> <span id="review-project"></span><br>
+                      <strong>Project ID:</strong> <span id="review-project-id"></span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="alert alert-info">
+                  <h6><i class="fas fa-info-circle me-1"></i> What happens next?</h6>
+                  <ol class="mb-0 ps-3">
+                    <li>Your request will be reviewed by our team</li>
+                    <li>If approved, changes will be applied automatically</li>
+                    <li>Your website will be live within 10-15 minutes</li>
+                    <li>You'll receive an email confirmation with details</li>
+                  </ol>
+                </div>
+
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                  <button type="button" class="btn btn-outline-secondary" id="step3-back">
+                    <i class="fas fa-arrow-left me-1"></i> Back
+                  </button>
+                  <button type="button" class="btn btn-success" id="submit-request" data-bs-toggle="modal" data-bs-target="#submittingModal">
+                    <i class="fas fa-paper-plane me-1"></i> Submit Request
+                  </button>
+                </div>
               </div>
-              <pre id="yaml-preview"></pre>
             </div>
-            <div class="review-block">
-              <div class="review-block-header review-block-header-split">
-                <h3>Manifest diff</h3>
-                <button type="button" id="copy-diff-btn" class="secondary-btn slim-btn">Copy diff</button>
-              </div>
-              <pre id="manifest-diff" class="diff-preview"></pre>
-            </div>
-            <section class="lifecycle-card">
-              <h3>What happens after submit</h3>
-              <div class="lifecycle-grid">
-                <div>1. Azure DevOps PR</div>
-                <div>2. Azure Pipelines validation</div>
-                <div>3. Merge to main</div>
-                <div>4. Argo CD sync</div>
-                <div>5. ExternalDNS reconcile</div>
-                <div>6. Cloud DNS update</div>
-              </div>
-            </section>
           </div>
-        </section>
-      </section>
+        </div>
+      </div>
+
+      <!-- Step 4: Success -->
+      <div id="step4-screen" class="step-screen" style="display: none;">
+        <div class="row justify-content-center">
+          <div class="col-lg-6">
+            <div class="card border-0 shadow-sm">
+              <div class="card-body p-4 text-center">
+                <i class="fas fa-check-circle text-success fa-3x mb-3"></i>
+                <h2 class="h4 text-success mb-3">Request submitted successfully!</h2>
+                
+                <div class="alert alert-success">
+                  <strong>Reference Number:</strong> <span id="request-reference" class="font-monospace"></span>
+                </div>
+
+                <div class="mb-4">
+                  <h5>What happens next:</h5>
+                  <div class="list-group list-group-flush">
+                    <div class="list-group-item d-flex align-items-center">
+                      <span class="badge bg-warning me-3">1</span>
+                      <span>Your request is being reviewed</span>
+                      <i class="fas fa-spinner fa-spin ms-auto text-warning"></i>
+                    </div>
+                    <div class="list-group-item d-flex align-items-center text-muted">
+                      <span class="badge bg-secondary me-3">2</span>
+                      <span>Changes will be applied automatically</span>
+                    </div>
+                    <div class="list-group-item d-flex align-items-center text-muted">
+                      <span class="badge bg-secondary me-3">3</span>
+                      <span>Your website will be live in ~10 minutes</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
+                  <button class="btn btn-primary" id="view-request-status">
+                    <i class="fas fa-eye me-1"></i> View Request Status
+                  </button>
+                  <button class="btn btn-outline-primary" id="submit-another">
+                    <i class="fas fa-plus me-1"></i> Submit Another Request
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </main>
 
+    <!-- Submitting Modal -->
+    <div class="modal fade" id="submittingModal" tabindex="-1">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-body text-center p-4">
+            <div class="spinner-border text-primary mb-3" role="status"></div>
+            <h5>Submitting your request...</h5>
+            <p class="text-muted mb-0">This may take a few seconds</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script type="module" src="/app.js"></script>
   </body>
 </html>
