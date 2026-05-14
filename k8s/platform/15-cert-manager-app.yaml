@@ -20,6 +20,8 @@ spec:
           kind: ControllerConfiguration
           leaderElectionConfig:
             namespace: cert-manager
+        extraArgs:
+          - --leader-election-namespace=cert-manager
         replicaCount: 1
         prometheus:
           enabled: false
@@ -35,6 +37,8 @@ spec:
             kind: CAInjectorConfiguration
             leaderElectionConfig:
               namespace: cert-manager
+          extraArgs:
+            - --leader-election-namespace=cert-manager
         webhook:
           replicaCount: 1
   destination:
