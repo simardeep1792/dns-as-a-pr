@@ -15,8 +15,11 @@ spec:
       values: |
         crds:
           enabled: true
-        leaderElection:
-          namespace: cert-manager
+        config:
+          apiVersion: controller.config.cert-manager.io/v1alpha1
+          kind: ControllerConfiguration
+          leaderElectionConfig:
+            namespace: cert-manager
         replicaCount: 1
         prometheus:
           enabled: false
@@ -27,6 +30,11 @@ spec:
             iam.gke.io/gcp-service-account: cert-manager@edip-aurora-fgc.iam.gserviceaccount.com
         cainjector:
           enabled: true
+          config:
+            apiVersion: cainjector.config.cert-manager.io/v1alpha1
+            kind: CAInjectorConfiguration
+            leaderElectionConfig:
+              namespace: cert-manager
         webhook:
           replicaCount: 1
   destination:
