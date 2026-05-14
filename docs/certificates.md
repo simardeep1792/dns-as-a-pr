@@ -6,11 +6,12 @@ Expose `dns-ui.simardeep.xyz` over HTTPS using cert-manager and Let’s Encrypt 
 
 ## GitOps Structure
 
-1. `k8s/platform/15-cert-manager-app.yaml` installs cert-manager from the Jetstack chart.
-2. `k8s/platform/16-cert-manager-issuers-app.yaml` applies the issuer resources.
-3. `k8s/apps/cert-manager-issuers/clusterissuers.yaml` defines staging and production `ClusterIssuer` resources.
-4. `k8s/apps/dns-request-ui/certificate.yaml` requests the UI certificate.
-5. `k8s/apps/dns-request-ui/ingress.yaml` terminates TLS with the generated secret.
+1. `k8s/platform/15-cert-manager-app.yaml` points Argo CD at a local cert-manager Kustomize overlay.
+2. `k8s/apps/cert-manager/kustomization.yaml` patches upstream cert-manager manifests for GKE Autopilot and Workload Identity.
+3. `k8s/platform/16-cert-manager-issuers-app.yaml` applies the issuer resources.
+4. `k8s/apps/cert-manager-issuers/clusterissuers.yaml` defines staging and production `ClusterIssuer` resources.
+5. `k8s/apps/dns-request-ui/certificate.yaml` requests the UI certificate.
+6. `k8s/apps/dns-request-ui/ingress.yaml` terminates TLS with the generated secret.
 
 ## GCP Permissions
 
