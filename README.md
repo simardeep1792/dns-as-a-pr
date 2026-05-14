@@ -1,11 +1,85 @@
 # DNS As A PR
 
-`dns-as-a-pr` is an Azure DevOps-first GitOps workflow for managing `simardeep.xyz` DNS records.
+`dns-as-a-pr` is an Azure DevOps-first GitOps platform for managing DNS records through pull requests.
 
-Every DNS change is submitted as a pull request to Azure Repos. After merge, Argo CD syncs the repository into GKE and ExternalDNS reconciles the resulting `DNSEndpoint` manifests into Google Cloud DNS.
+It gives teams a clear request path for DNS changes: submit through the UI or YAML, validate in Azure Pipelines, and let Argo CD plus ExternalDNS reconcile approved changes into Google Cloud DNS.
+
+## About This Project
+
+`dns-as-a-pr` helps teams manage DNS with the same review, traceability, and approval model they already use for code.
+
+Instead of editing DNS records manually in a cloud console, users create a pull request in Azure DevOps. After merge, GitOps controllers apply the approved state into GKE and publish the change to Cloud DNS.
+
+`simardeep.xyz` appears in this repository as an example domain for the POC. Treat it as placeholder data unless the deployment is intentionally using that zone.
+
+This keeps DNS changes:
+
+1. Reviewable
+2. Auditable
+3. Repeatable
+4. Git-backed
+
+ADO-friendly request path:
 
 ```text
-UI / CLI -> Azure DevOps pull request -> Azure Pipelines -> merge to main -> Argo CD -> ExternalDNS -> Cloud DNS
+UI / CLI
+  |
+  v
+Azure DevOps pull request
+  |
+  v
+Azure Pipelines validation
+  |
+  v
+Merge to main
+  |
+  v
+Argo CD sync
+  |
+  v
+ExternalDNS reconcile
+  |
+  v
+Google Cloud DNS
+```
+
+## Project Summary
+
+1. Azure Repos is the source of truth.
+2. Azure Pipelines validates DNS, Kubernetes, infrastructure, and UI changes.
+3. Argo CD continuously syncs platform state into GKE.
+4. ExternalDNS reconciles `DNSEndpoint` resources into Google Cloud DNS.
+5. cert-manager issues HTTPS certificates for the public UI hostname.
+
+ADO-friendly component view:
+
+```text
++------------------+
+| Request layer    |
+| UI / CLI         |
++------------------+
+
++------------------+
+| Source of truth  |
+| Azure Repos      |
++------------------+
+
++------------------+
+| Validation       |
+| Azure Pipelines  |
++------------------+
+
++------------------+
+| Runtime on GKE   |
+| Argo CD          |
+| ExternalDNS      |
+| cert-manager     |
++------------------+
+
++------------------+
+| DNS provider     |
+| Google Cloud DNS |
++------------------+
 ```
 
 ## What This Repo Owns
@@ -71,7 +145,7 @@ Open `http://localhost:8080`.
 
 ## Certificates
 
-The UI hostname `dns-ui.simardeep.xyz` is wired for cert-manager with Let’s Encrypt DNS-01 on GKE. The repo now contains:
+The example UI hostname `dns-ui.simardeep.xyz` is wired for cert-manager with Let’s Encrypt DNS-01 on GKE. Replace it with the real hostname used by your environment if `simardeep.xyz` is not your active zone.
 
 1. A cert-manager Argo CD application.
 2. Let’s Encrypt `ClusterIssuer` resources.

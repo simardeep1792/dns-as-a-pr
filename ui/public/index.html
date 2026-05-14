@@ -14,95 +14,127 @@
     <header class="gc-header">
       <div class="gc-header-inner">
         <p class="service-name">DNS as a PR</p>
+        <p class="service-tagline">Create a DNS change request, open an Azure DevOps pull request, and let GitOps reconcile the approved state.</p>
       </div>
       <div class="accent-bar"></div>
     </header>
+
     <main id="main-content" class="shell">
-        <section class="intro-card">
-          <h1>Request a DNS record</h1>
-          <p>Create a DNS manifest, open an Azure DevOps pull request, and let Argo CD plus ExternalDNS reconcile the change after merge.</p>
-        </section>
+      <section class="hero-card">
+        <div>
+          <p class="eyebrow">Azure DevOps-first request flow</p>
+          <h1>Request a DNS record change</h1>
+          <p class="hero-copy">This UI prepares a `DNSEndpoint` manifest and opens an Azure DevOps pull request. It does not write Cloud DNS directly.</p>
+        </div>
+        <div class="hero-flow">
+          <p>Request</p>
+          <p>Validate</p>
+          <p>Open PR</p>
+          <p>Merge</p>
+          <p>Reconcile</p>
+        </div>
+      </section>
 
       <section class="panel-grid">
-        <form id="request-form" class="panel">
-          <h2>Request details</h2>
-          <ol class="stepper" id="stepper">
-            <li class="active">Record</li>
-            <li>Ownership</li>
-            <li>Review</li>
-          </ol>
+        <form id="request-form" class="panel request-panel">
+          <div class="panel-heading">
+            <div>
+              <h2>Create request</h2>
+              <p>Fill in the DNS record details, then validate before opening the Azure DevOps pull request.</p>
+            </div>
+          </div>
 
-          <section class="step" data-step="1">
-            <h3>Step 1: DNS record</h3>
-            <label>Subdomain<input name="subdomain" required placeholder="blog" /></label>
-            <label>Record Type
-              <select name="recordType" id="record-type" required>
-                <option>A</option>
-                <option>AAAA</option>
-                <option>CNAME</option>
-                <option>TXT</option>
-                <option>NS</option>
-              </select>
-            </label>
-            <p id="target-help" class="field-help">For A records, enter IPv4 values such as 203.0.113.10.</p>
-            <label>TTL<input name="recordTTL" type="number" min="60" max="86400" value="300" required /></label>
+          <section class="form-section">
+            <h3>Record</h3>
+            <div class="field-grid two-up">
+              <label>Subdomain<input name="subdomain" required placeholder="blog" /></label>
+              <label>Record type
+                <select name="recordType" id="record-type" required>
+                  <option>A</option>
+                  <option>AAAA</option>
+                  <option>CNAME</option>
+                  <option>TXT</option>
+                  <option>NS</option>
+                </select>
+              </label>
+            </div>
+            <div class="field-grid two-up compact-row">
+              <label>TTL<input name="recordTTL" type="number" min="60" max="86400" value="300" required /></label>
+              <div class="field-note-card">
+                <p class="field-note-title">Target guidance</p>
+                <p id="target-help" class="field-help">For A records, enter IPv4 values such as 203.0.113.10.</p>
+              </div>
+            </div>
             <label>Targets (one per line)
-              <textarea name="targets" rows="5" required placeholder="203.0.113.10"></textarea>
+              <textarea name="targets" rows="6" required placeholder="203.0.113.10"></textarea>
             </label>
           </section>
 
-          <section class="step hidden" data-step="2">
-            <h3>Step 2: Ownership and traceability</h3>
-            <label>Controlled by<input name="controlledBy" required value="dns-as-a-pr" /></label>
-            <label>Project name<input name="projectName" required placeholder="sci-portal" /></label>
-            <label>Project ID<input name="projectId" required placeholder="pht-01hsv4d2m0n" /></label>
+          <section class="form-section">
+            <h3>Ownership and traceability</h3>
+            <div class="field-grid two-up">
+              <label>Controlled by<input name="controlledBy" required value="dns-as-a-pr" /></label>
+              <label>Owner or team<input name="owner" required placeholder="platform" /></label>
+              <label>Project name<input name="projectName" required placeholder="sci-portal" /></label>
+              <label>Project ID<input name="projectId" required placeholder="pht-01hsv4d2m0n" /></label>
+            </div>
             <label>Source repository<input name="sourceRepository" type="url" required placeholder="https://dev.azure.com/org/project/_git/repo" /></label>
-            <label>Owner or team<input name="owner" required placeholder="platform" /></label>
           </section>
 
-          <section class="step hidden" data-step="3">
-            <h3>Step 3: Validate and submit</h3>
-            <p class="field-help">Validate the request first. The Azure DevOps pull request button stays disabled until every local check passes.</p>
-            <div class="actions">
+          <section class="form-section submit-section">
+            <div class="submit-copy">
+              <h3>Validate and open pull request</h3>
+              <p>Validation checks for policy issues and duplicate record files. The pull request button stays disabled until validation passes.</p>
+            </div>
+            <div class="actions submit-actions">
               <button type="button" id="preview-btn">Validate request</button>
               <button type="submit" id="submit-btn" disabled>Create Azure DevOps pull request</button>
             </div>
           </section>
-
-          <div class="actions nav-actions">
-            <button type="button" id="prev-step-btn" class="secondary-btn">Back</button>
-            <button type="button" id="next-step-btn">Next</button>
-          </div>
         </form>
 
-        <section class="panel output-panel">
-          <h2>Review</h2>
-          <p id="meta" class="meta">Fill the form, validate the request, then create the Azure DevOps pull request.</p>
-          <div id="destination" class="destination-card"></div>
-          <div id="checks" class="checks"></div>
-          <div id="pr-summary" class="pr-summary"></div>
-          <pre id="yaml-preview"></pre>
-          <button type="button" id="copy-diff-btn" class="secondary-btn">Copy manifest diff</button>
-          <pre id="manifest-diff" class="diff-preview"></pre>
-          <p id="result" class="result"></p>
+        <section class="panel review-panel">
+          <div class="panel-heading">
+            <div>
+              <h2>Review package</h2>
+              <p id="meta" class="meta">Validate the request to see the generated manifest, destination, and pull request summary.</p>
+            </div>
+          </div>
 
-          <section class="status-panel">
-            <h3>Pull request status</h3>
-            <p>After creating a pull request, refresh status to track Azure Pipelines and live DNS state.</p>
-            <label>PR URL or number<input id="pr-status-input" placeholder="https://dev.azure.com/org/project/_git/repo/pullrequest/123" /></label>
-            <button type="button" id="refresh-status-btn" class="secondary-btn">Refresh status</button>
-            <pre id="pr-status-output" class="diff-preview"></pre>
-          </section>
-
-          <section class="architecture">
-            <h3>How this works</h3>
-            <p>This service opens an Azure DevOps pull request only. Azure Pipelines validate the manifest, then Argo CD and ExternalDNS apply it after merge.</p>
-            <pre class="architecture-flow">UI -> Azure DevOps PR -> Azure Pipelines -> Merge -> Argo CD -> DNSEndpoint -> ExternalDNS -> Cloud DNS</pre>
-            <p class="architecture-note">Git is the source of truth. The UI does not write Cloud DNS directly.</p>
-          </section>
+          <div class="review-stack">
+            <div id="destination" class="destination-card"></div>
+            <div id="checks" class="checks card-block"></div>
+            <div id="pr-summary" class="summary-card card-block"></div>
+            <p id="result" class="result"></p>
+            <div class="review-block">
+              <div class="review-block-header">
+                <h3>Generated manifest</h3>
+              </div>
+              <pre id="yaml-preview"></pre>
+            </div>
+            <div class="review-block">
+              <div class="review-block-header review-block-header-split">
+                <h3>Manifest diff</h3>
+                <button type="button" id="copy-diff-btn" class="secondary-btn slim-btn">Copy diff</button>
+              </div>
+              <pre id="manifest-diff" class="diff-preview"></pre>
+            </div>
+            <section class="lifecycle-card">
+              <h3>What happens after submit</h3>
+              <div class="lifecycle-grid">
+                <div>1. Azure DevOps PR</div>
+                <div>2. Azure Pipelines validation</div>
+                <div>3. Merge to main</div>
+                <div>4. Argo CD sync</div>
+                <div>5. ExternalDNS reconcile</div>
+                <div>6. Cloud DNS update</div>
+              </div>
+            </section>
+          </div>
         </section>
       </section>
     </main>
+
     <script type="module" src="/app.js"></script>
   </body>
 </html>

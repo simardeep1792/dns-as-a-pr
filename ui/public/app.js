@@ -1,63 +1,58 @@
 const form = document.getElementById("request-form");
 const previewBtn = document.getElementById("preview-btn");
-const yamlPreview = document.getElementById("yaml-preview");
-const meta = document.getElementById("meta");
-const result = document.getElementById("result");
-const checks = document.getElementById("checks");
-const prSummary = document.getElementById("pr-summary");
-const manifestDiff = document.getElementById("manifest-diff");
-const copyDiffBtn = document.getElementById("copy-diff-btn");
-const refreshStatusBtn = document.getElementById("refresh-status-btn");
-const prStatusInput = document.getElementById("pr-status-input");
-const prStatusOutput = document.getElementById("pr-status-output");
-const destination = document.getElementById("destination");
+const submitBtn = document.getElementById("submit-btn");
 const recordTypeSelect = document.getElementById("record-type");
 const targetHelp = document.getElementById("target-help");
-const submitBtn = document.getElementById("submit-btn");
-const prevStepBtn = document.getElementById("prev-step-btn");
-const nextStepBtn = document.getElementById("next-step-btn");
-const stepper = document.getElementById("stepper");
-const steps = Array.from(document.querySelectorAll(".step"));
+const meta = document.getElementById("meta");
+const destination = document.getElementById("destination");
+const checks = document.getElementById("checks");
+const prSummary = document.getElementById("pr-summary");
+const result = document.getElementById("result");
+const yamlPreview = document.getElementById("yaml-preview");
+const manifestDiff = document.getElementById("manifest-diff");
+const copyDiffBtn = document.getElementById("copy-diff-btn");
 
-let currentStep = 1;
 let isValidated = false;
 
 function renderDestination(info = {}) {
   const providerLabel = info.provider === "azure-devops" || info.provider === "dry-run"
-    ? "Azure DevOps"
-    : info.provider || "Git provider";
+    ? "Azure DevOps destination"
+    : "Request destination";
+
   destination.textContent = [
-    `${providerLabel} destination`,
+    providerLabel,
     `${info.organization || "EDIP-PIDE"} / ${info.project || "dns-as-a-pr"} / ${info.repository || "dns-as-a-pr"}`,
     `Target branch: ${info.baseBranch || "main"}`
   ].join("\n");
 }
 
+function renderChecks(items = []) {
+  if (items.length === 0) {
+    checks.textContent = "Validation checks will appear here.";
+    return;
+  }
+
+  checks.textContent = items
+    .map((item) => `${item.status === "pass" ? "PASS" : "FAIL"}  ${item.name}\n${item.detail}`)
+    .join("\n\n");
+}
+
+function renderSummary(title = "") {
+  prSummary.textContent = title
+    ? `Pull request title\n${title}`
+    : "Pull request title will appear here after validation.";
+}
+
 function updateTargetHelp() {
   const type = recordTypeSelect.value;
   const map = {
-    A: "For A records, enter IPv4 values such as 203.0.113.10.",
-    AAAA: "For AAAA records, enter IPv6 values such as 2001:db8::1.",
-    CNAME: "For CNAME, provide one target hostname like app.example.net.",
-    TXT: "For TXT, wrap each value in double quotes, for example \"verify=ok\".",
-    NS: "For NS, provide at least two nameserver hostnames."
+    A: "Use IPv4 targets such as 203.0.113.10.",
+    AAAA: "Use IPv6 targets such as 2001:db8::1.",
+    CNAME: "Provide exactly one hostname target such as app.example.net.",
+    TXT: "Each TXT value should be wrapped in double quotes, for example \"verify=ok\".",
+    NS: "Provide at least two authoritative nameserver hostnames."
   };
   targetHelp.textContent = map[type] || map.A;
-}
-
-function setStep(stepNumber) {
-  currentStep = Math.max(1, Math.min(3, stepNumber));
-  steps.forEach((step, index) => {
-    step.classList.toggle("hidden", index + 1 !== currentStep);
-  });
-
-  const bullets = stepper.querySelectorAll("li");
-  bullets.forEach((bullet, index) => {
-    bullet.classList.toggle("active", index + 1 === currentStep);
-  });
-
-  prevStepBtn.disabled = currentStep === 1;
-  nextStepBtn.disabled = currentStep === 3;
 }
 
 function resetValidationState() {
@@ -98,16 +93,6 @@ async function callApi(url, method = "POST") {
   return body;
 }
 
-function formatChecks(items) {
-  if (!items || items.length === 0) {
-    return "";
-  }
-
-  return items
-    .map((item) => `${item.status === "pass" ? "PASS" : "FAIL"} ${item.name}: ${item.detail}`)
-    .join("\n");
-}
-
 function maybeAutoQuoteTxtTargets() {
   const payload = payloadFromForm();
   if (payload.recordType !== "TXT") {
@@ -127,22 +112,26 @@ function maybeAutoQuoteTxtTargets() {
 previewBtn.addEventListener("click", async () => {
   result.textContent = "";
   maybeAutoQuoteTxtTargets();
+
   try {
     const body = await callApi("/api/validate");
-    yamlPreview.textContent = body.yaml;
-    meta.textContent = `Path: ${body.filePath} | Branch: ${body.branch}`;
+    meta.textContent = `Generated file: ${body.filePath} | Branch: ${body.branch}`;
     renderDestination(body.destination);
-    checks.textContent = formatChecks(body.checks);
-    prSummary.textContent = `PR title: ${body.title}`;
+    renderChecks(body.checks || []);
+    renderSummary(body.title);
+    yamlPreview.textContent = body.yaml || "";
     manifestDiff.textContent = body.manifestDiff || "";
-    if (body.warnings?.length) {
-      result.textContent = `Warnings: ${body.warnings.join("; ")}`;
-    }
+
     const hasFail = (body.checks || []).some((check) => check.status !== "pass");
     isValidated = !hasFail;
     submitBtn.disabled = hasFail;
-    if (!hasFail) {
-      result.textContent = result.textContent || "Validation passed. You can now create the Azure DevOps pull request.";
+
+    if (body.warnings?.length) {
+      result.textContent = `Warnings: ${body.warnings.join("; ")}`;
+    } else if (!hasFail) {
+      result.textContent = "Validation passed. You can now create the Azure DevOps pull request.";
+    } else {
+      result.textContent = "Validation failed. Review the checks before submitting.";
     }
   } catch (error) {
     isValidated = false;
@@ -153,11 +142,14 @@ previewBtn.addEventListener("click", async () => {
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
+
   if (!isValidated) {
-    result.textContent = "Validate request first.";
+    result.textContent = "Validate the request before submitting it.";
     return;
   }
-  result.textContent = "Submitting...";
+
+  result.textContent = "Opening pull request...";
+
   try {
     const body = await callApi("/api/requests");
     result.textContent = "Pull request created: ";
@@ -167,11 +159,14 @@ form.addEventListener("submit", async (event) => {
     link.rel = "noreferrer";
     link.textContent = body.url;
     result.appendChild(link);
-    prStatusInput.value = body.url;
     renderDestination(body.destination);
   } catch (error) {
     result.textContent = error.message;
   }
+});
+
+form.addEventListener("input", () => {
+  resetValidationState();
 });
 
 recordTypeSelect.addEventListener("change", () => {
@@ -179,39 +174,10 @@ recordTypeSelect.addEventListener("change", () => {
   resetValidationState();
 });
 
-form.addEventListener("input", () => {
-  resetValidationState();
-});
-
-prevStepBtn.addEventListener("click", () => {
-  setStep(currentStep - 1);
-});
-
-nextStepBtn.addEventListener("click", () => {
-  const requiredFieldsByStep = {
-    1: ["subdomain", "recordType", "recordTTL", "targets"],
-    2: ["controlledBy", "projectName", "projectId", "sourceRepository", "owner"]
-  };
-
-  const fields = requiredFieldsByStep[currentStep] || [];
-  for (const name of fields) {
-    const input = form.elements[name];
-    if (input && !input.reportValidity()) {
-      return;
-    }
-  }
-
-  setStep(currentStep + 1);
-});
-
-setStep(1);
-updateTargetHelp();
-renderDestination();
-
 copyDiffBtn.addEventListener("click", async () => {
   const text = manifestDiff.textContent || "";
   if (!text) {
-    result.textContent = "No manifest diff to copy. Validate first.";
+    result.textContent = "No manifest diff to copy. Validate the request first.";
     return;
   }
 
@@ -219,44 +185,11 @@ copyDiffBtn.addEventListener("click", async () => {
     await navigator.clipboard.writeText(text);
     result.textContent = "Manifest diff copied to clipboard.";
   } catch (_error) {
-    result.textContent = "Could not copy diff. Please copy manually.";
+    result.textContent = "Could not copy diff. Please copy it manually.";
   }
 });
 
-refreshStatusBtn.addEventListener("click", async () => {
-  const prRef = prStatusInput.value.trim();
-  const payload = payloadFromForm();
-  if (!prRef) {
-    prStatusOutput.textContent = "Provide a PR URL or PR number.";
-    return;
-  }
-
-  try {
-    const response = await fetch(
-      `/api/pr-status?pr=${encodeURIComponent(prRef)}&subdomain=${encodeURIComponent(payload.subdomain)}`
-    );
-    const body = await response.json();
-    if (!response.ok) {
-      throw new Error(body.error || "status check failed");
-    }
-
-    prStatusOutput.textContent = [
-      `PR #${body.pullRequest.number}`,
-      `State: ${body.pullRequest.state}`,
-      `Merged: ${body.pullRequest.merged}`,
-      `Checks: ${body.pullRequest.checksState}`,
-      "",
-      "Check runs:",
-      ...(body.pullRequest.checks || []).map(
-        (check) => `- ${check.name}: ${check.status}/${check.conclusion}`
-      ),
-      "",
-      `DNS host: ${body.dns.host}`,
-      `DNS live: ${body.dns.live}`,
-      `Recursive: ${(body.dns.recursive || []).join(", ") || "none"}`,
-      `Authoritative: ${(body.dns.authoritative || []).join(", ") || "none"}`
-    ].join("\n");
-  } catch (error) {
-    prStatusOutput.textContent = error.message;
-  }
-});
+updateTargetHelp();
+renderDestination();
+renderChecks();
+renderSummary();
