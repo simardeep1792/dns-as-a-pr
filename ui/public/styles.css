@@ -211,8 +211,19 @@ textarea {
 
 .checks,
 .pr-summary,
+.destination-card,
 .status-panel {
   margin-bottom: 0.8rem;
+}
+
+.destination-card {
+  border: 1px solid var(--gc-border);
+  background: #f7f9fc;
+  padding: 0.8rem;
+  white-space: pre-wrap;
+  font-family: "Roboto Mono", monospace;
+  font-size: 0.83rem;
+  line-height: 1.5;
 }
 
 .checks p,

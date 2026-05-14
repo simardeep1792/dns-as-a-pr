@@ -1,7 +1,27 @@
 const RECORD_TYPES = new Set(["A", "AAAA", "CNAME", "TXT", "NS"]);
 const IPV4_PATTERN = /^(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}$/;
-const IPV6_PATTERN = /^(([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}|::1|::)$/;
+const IPV6_PATTERN = /^(([0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4}|([0-9A-Fa-f]{1,4}:){1,7}:|([0-9A-Fa-f]{1,4}:){1,6}:[0-9A-Fa-f]{1,4}|([0-9A-Fa-f]{1,4}:){1,5}(:[0-9A-Fa-f]{1,4}){1,2}|([0-9A-Fa-f]{1,4}:){1,4}(:[0-9A-Fa-f]{1,4}){1,3}|([0-9A-Fa-f]{1,4}:){1,3}(:[0-9A-Fa-f]{1,4}){1,4}|([0-9A-Fa-f]{1,4}:){1,2}(:[0-9A-Fa-f]{1,4}){1,5}|[0-9A-Fa-f]{1,4}:((:[0-9A-Fa-f]{1,4}){1,6})|:((:[0-9A-Fa-f]{1,4}){1,7}|:))$/;
 const FQDN_PATTERN = /^(?=.{1,253}$)(?!-)[A-Za-z0-9-]{1,63}(\.(?!-)[A-Za-z0-9-]{1,63})+\.?$/;
+
+function ensureSafeSingleLine(value, fieldName) {
+  if (!value) {
+    return value;
+  }
+
+  if (/[\r\n\t]/.test(value)) {
+    throw new Error(`${fieldName} must be a single-line value`);
+  }
+
+  if (/[^\x20-\x7E]/.test(value)) {
+    throw new Error(`${fieldName} must use printable ASCII characters only`);
+  }
+
+  return value;
+}
+
+function toYamlString(value) {
+  return JSON.stringify(String(value));
+}
 
 function validateSubdomain(subdomain) {
   return /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(subdomain);
@@ -48,6 +68,15 @@ function validateTargets(recordType, targets) {
   return errors;
 }
 
+function isAzureDevOpsRepositoryUrl(value) {
+  try {
+    const url = new URL(value);
+    return ["dev.azure.com", "visualstudio.com"].some((host) => url.hostname.endsWith(host));
+  } catch (_error) {
+    return false;
+  }
+}
+
 function validatePolicy(subdomain, zone, policy) {
   const errors = [];
   const warnings = [];
@@ -81,14 +110,14 @@ function validatePolicy(subdomain, zone, policy) {
 function normalizeRequest(input, policy = {}) {
   const subdomain = String(input.subdomain || "").trim().toLowerCase();
   const recordType = String(input.recordType || "").trim().toUpperCase();
-  const owner = String(input.owner || "").trim();
-  const controlledBy = String(input.controlledBy || "").trim();
-  const projectName = String(input.projectName || "").trim();
-  const projectId = String(input.projectId || "").trim();
-  const sourceRepository = String(input.sourceRepository || "").trim();
+  const owner = ensureSafeSingleLine(String(input.owner || "").trim(), "owner");
+  const controlledBy = ensureSafeSingleLine(String(input.controlledBy || "").trim(), "controlled-by");
+  const projectName = ensureSafeSingleLine(String(input.projectName || "").trim(), "project-name");
+  const projectId = ensureSafeSingleLine(String(input.projectId || "").trim(), "project-id");
+  const sourceRepository = ensureSafeSingleLine(String(input.sourceRepository || "").trim(), "source-repository");
   const ttl = Number(input.recordTTL);
   const targets = Array.isArray(input.targets)
-    ? input.targets.map((item) => String(item).trim()).filter(Boolean)
+    ? input.targets.map((item) => ensureSafeSingleLine(String(item).trim(), "target")).filter(Boolean)
     : [];
 
   if (!validateSubdomain(subdomain)) {
@@ -99,8 +128,8 @@ function normalizeRequest(input, policy = {}) {
     throw new Error("recordType must be one of A, AAAA, CNAME, TXT, NS");
   }
 
-  if (!Number.isInteger(ttl) || ttl <= 0) {
-    throw new Error("recordTTL must be a positive integer");
+  if (!Number.isInteger(ttl) || ttl < 60 || ttl > 86400) {
+    throw new Error("recordTTL must be an integer between 60 and 86400 seconds");
   }
 
   if (!owner) {
@@ -121,6 +150,10 @@ function normalizeRequest(input, policy = {}) {
 
   if (!sourceRepository || !isLikelyHttpUrl(sourceRepository)) {
     throw new Error("source-repository must be a valid http/https URL");
+  }
+
+  if (!isAzureDevOpsRepositoryUrl(sourceRepository)) {
+    throw new Error("source-repository must point to Azure DevOps");
   }
 
   if (targets.length === 0) {
@@ -178,23 +211,23 @@ function renderYaml(req) {
     `  name: ${manifestName(req.subdomain)}`,
     "  namespace: dns",
     "  annotations:",
-    `    simardeep.xyz/source-repository: \"${req.sourceRepository}\"`,
-    "    simardeep.xyz/zone-scope: \"simardeep-xyz\"",
+    `    simardeep.xyz/source-repository: ${toYamlString(req.sourceRepository)}`,
+    `    simardeep.xyz/zone-scope: ${toYamlString("simardeep-xyz")}`,
     "  labels:",
-    `    simardeep.xyz/controlled-by: \"${req.controlledBy}\"`,
-    `    simardeep.xyz/project-name: \"${req.projectName}\"`,
-    `    simardeep.xyz/project-id: \"${req.projectId}\"`,
-    `    simardeep.xyz/owner: \"${req.owner}\"`,
+    `    simardeep.xyz/controlled-by: ${toYamlString(req.controlledBy)}`,
+    `    simardeep.xyz/project-name: ${toYamlString(req.projectName)}`,
+    `    simardeep.xyz/project-id: ${toYamlString(req.projectId)}`,
+    `    simardeep.xyz/owner: ${toYamlString(req.owner)}`,
     "spec:",
     "  endpoints:",
-    `    - dnsName: ${req.subdomain}.${req.zone}`,
-    `      recordType: ${req.recordType}`,
+    `    - dnsName: ${toYamlString(`${req.subdomain}.${req.zone}`)}`,
+    `      recordType: ${toYamlString(req.recordType)}`,
     `      recordTTL: ${req.recordTTL}`,
     "      targets:"
   ];
 
   for (const target of req.targets) {
-    lines.push(`        - ${target}`);
+    lines.push(`        - ${toYamlString(target)}`);
   }
 
   return `${lines.join("\n")}\n`;

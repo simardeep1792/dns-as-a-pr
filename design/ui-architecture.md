@@ -6,7 +6,7 @@ The UI is a request layer only. It does not mutate Cloud DNS directly and does n
 
 1. Capture DNS request input.
 2. Generate a valid `DNSEndpoint` manifest.
-3. Open a pull request in the Git host.
+3. Open a pull request in Azure DevOps.
 
 ## Components
 
@@ -32,7 +32,7 @@ Validation rules:
 
 - `subdomain` is required and lower-case DNS-safe.
 - `recordType` must be one of `A`, `AAAA`, `CNAME`, `TXT`, `NS`.
-- `recordTTL` must be a positive integer.
+- `recordTTL` must be an integer between `60` and `86400`.
 - `targets` must contain at least one non-empty value.
 - `owner` is required for ownership traceability.
 

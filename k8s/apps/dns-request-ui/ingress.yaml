@@ -6,6 +6,10 @@ metadata:
   annotations:
     kubernetes.io/ingress.class: gce
 spec:
+  tls:
+    - hosts:
+        - dns-ui.simardeep.xyz
+      secretName: dns-request-ui-tls
   rules:
     - host: dns-ui.simardeep.xyz
       http:

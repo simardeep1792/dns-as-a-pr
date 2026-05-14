@@ -28,3 +28,10 @@ module "iam_external_dns" {
   project_id        = var.project_id
   managed_zone_name = module.dns.managed_zone_name
 }
+
+module "iam_cert_manager" {
+  source = "../../modules/iam-cert-manager"
+
+  project_id        = var.project_id
+  managed_zone_name = module.dns.managed_zone_name
+}

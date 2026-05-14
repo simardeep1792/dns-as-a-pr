@@ -26,6 +26,7 @@ variables:
   GAR_REGION: northamerica-northeast1
   GAR_REPOSITORY: dns-as-a-pr
   GAR_IMAGE_NAME: dns-request-ui
+  GAR_PUSH_ENABLED: 'false'
 
 steps:
   - checkout: self
@@ -46,52 +47,24 @@ steps:
       kill "$pid"
     displayName: Smoke test UI API
 
-  - task: Docker@2
-    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
-    inputs:
-      command: buildAndPush
-      containerRegistry: $(GAR_DOCKER_SERVICE_CONNECTION)
-      Dockerfile: ui/Dockerfile
-      repository: $(GAR_REGION)-docker.pkg.dev/$(GCP_PROJECT_ID)/$(GAR_REPOSITORY)/$(GAR_IMAGE_NAME)
-      buildContext: ui
-      tags: |
-        main
-        $(Build.SourceVersion)
-    displayName: Build and push UI container to GAR
+  - bash: |
+      set -euo pipefail
+      IMAGE="$(GAR_REGION)-docker.pkg.dev/$(GCP_PROJECT_ID)/$(GAR_REPOSITORY)/$(GAR_IMAGE_NAME)"
+      docker build -f ui/Dockerfile -t "$IMAGE:$(Build.SourceVersion)" -t "$IMAGE:main" ui
+    displayName: Build UI container image
 
   - bash: |
       set -euo pipefail
-      if [ "$(Build.SourceBranch)" != "refs/heads/main" ]; then
-        echo "Skipping deployment manifest image update on non-main branch"
+      if [ "$(Build.SourceBranch)" != "refs/heads/main" ] || [ "$(GAR_PUSH_ENABLED)" != "true" ]; then
+        echo "Skipping registry push"
         exit 0
       fi
 
-      IMAGE="$(GAR_REGION)-docker.pkg.dev/$(GCP_PROJECT_ID)/$(GAR_REPOSITORY)/$(GAR_IMAGE_NAME):$(Build.SourceVersion)"
-      python3 - <<'PY'
-      from pathlib import Path
-      import os
-      import re
+      : "${GAR_REGISTRY_USERNAME:?GAR_REGISTRY_USERNAME is required when GAR_PUSH_ENABLED=true}"
+      : "${GAR_REGISTRY_PASSWORD:?GAR_REGISTRY_PASSWORD is required when GAR_PUSH_ENABLED=true}"
 
-      path = Path("k8s/apps/dns-request-ui/deployment.yaml")
-      content = path.read_text()
-      image = os.environ["IMAGE"]
-      updated = re.sub(
-          r"image:\s*[^\s]+",
-          f"image: {image}",
-          content,
-          count=1,
-      )
-      path.write_text(updated)
-      PY
-
-      if git diff --quiet -- k8s/apps/dns-request-ui/deployment.yaml; then
-        echo "No deployment image update needed"
-        exit 0
-      fi
-
-      git add k8s/apps/dns-request-ui/deployment.yaml
-      git -c user.name='azure-pipelines[bot]' -c user.email='azure-pipelines@local' commit -m "chore: pin dns-request-ui image to $(Build.SourceVersion)"
-      git push origin HEAD:main
-    env:
-      IMAGE: $(GAR_REGION)-docker.pkg.dev/$(GCP_PROJECT_ID)/$(GAR_REPOSITORY)/$(GAR_IMAGE_NAME):$(Build.SourceVersion)
-    displayName: Update deployment image tag
+      IMAGE="$(GAR_REGION)-docker.pkg.dev/$(GCP_PROJECT_ID)/$(GAR_REPOSITORY)/$(GAR_IMAGE_NAME)"
+      echo "$GAR_REGISTRY_PASSWORD" | docker login -u "$GAR_REGISTRY_USERNAME" --password-stdin "https://$(GAR_REGION)-docker.pkg.dev"
+      docker push "$IMAGE:$(Build.SourceVersion)"
+      docker push "$IMAGE:main"
+    displayName: Push UI container image to GAR

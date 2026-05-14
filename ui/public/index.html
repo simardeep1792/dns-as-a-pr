@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>DNS Request Service</title>
+    <title>DNS as a PR</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet" />
@@ -18,14 +18,14 @@
       <div class="accent-bar"></div>
     </header>
     <main id="main-content" class="shell">
-      <section class="intro-card">
-        <h1>Request a DNS record change</h1>
-        <p>Submit a DNS request, review generated YAML, and create a pull request for approval.</p>
-      </section>
+        <section class="intro-card">
+          <h1>Request a DNS record</h1>
+          <p>Create a DNS manifest, open an Azure DevOps pull request, and let Argo CD plus ExternalDNS reconcile the change after merge.</p>
+        </section>
 
       <section class="panel-grid">
         <form id="request-form" class="panel">
-          <h2>Create request</h2>
+          <h2>Request details</h2>
           <ol class="stepper" id="stepper">
             <li class="active">Record</li>
             <li>Ownership</li>
@@ -33,7 +33,7 @@
           </ol>
 
           <section class="step" data-step="1">
-            <h3>Step 1: Record details</h3>
+            <h3>Step 1: DNS record</h3>
             <label>Subdomain<input name="subdomain" required placeholder="blog" /></label>
             <label>Record Type
               <select name="recordType" id="record-type" required>
@@ -45,27 +45,27 @@
               </select>
             </label>
             <p id="target-help" class="field-help">For A records, enter IPv4 values such as 203.0.113.10.</p>
-            <label>TTL<input name="recordTTL" type="number" min="1" value="300" required /></label>
+            <label>TTL<input name="recordTTL" type="number" min="60" max="86400" value="300" required /></label>
             <label>Targets (one per line)
               <textarea name="targets" rows="5" required placeholder="203.0.113.10"></textarea>
             </label>
           </section>
 
           <section class="step hidden" data-step="2">
-            <h3>Step 2: Ownership and source</h3>
+            <h3>Step 2: Ownership and traceability</h3>
             <label>Controlled by<input name="controlledBy" required value="dns-as-a-pr" /></label>
             <label>Project name<input name="projectName" required placeholder="sci-portal" /></label>
             <label>Project ID<input name="projectId" required placeholder="pht-01hsv4d2m0n" /></label>
-            <label>Source repository<input name="sourceRepository" type="url" required placeholder="https://github.com/org/repo" /></label>
+            <label>Source repository<input name="sourceRepository" type="url" required placeholder="https://dev.azure.com/org/project/_git/repo" /></label>
             <label>Owner or team<input name="owner" required placeholder="platform" /></label>
           </section>
 
           <section class="step hidden" data-step="3">
             <h3>Step 3: Validate and submit</h3>
-            <p class="field-help">Run validation before creating the pull request. The request button is enabled only when checks pass.</p>
+            <p class="field-help">Validate the request first. The Azure DevOps pull request button stays disabled until every local check passes.</p>
             <div class="actions">
               <button type="button" id="preview-btn">Validate request</button>
-              <button type="submit" id="submit-btn" disabled>Create pull request</button>
+              <button type="submit" id="submit-btn" disabled>Create Azure DevOps pull request</button>
             </div>
           </section>
 
@@ -76,8 +76,9 @@
         </form>
 
         <section class="panel output-panel">
-          <h2>Generated manifest</h2>
-          <p id="meta" class="meta">Fill the form, preview the file, then create the pull request.</p>
+          <h2>Review</h2>
+          <p id="meta" class="meta">Fill the form, validate the request, then create the Azure DevOps pull request.</p>
+          <div id="destination" class="destination-card"></div>
           <div id="checks" class="checks"></div>
           <div id="pr-summary" class="pr-summary"></div>
           <pre id="yaml-preview"></pre>
@@ -87,16 +88,16 @@
 
           <section class="status-panel">
             <h3>Pull request status</h3>
-            <p>After creating a pull request, refresh status to track CI and live DNS.</p>
-            <label>PR URL or number<input id="pr-status-input" placeholder="https://github.com/org/repo/pull/123" /></label>
+            <p>After creating a pull request, refresh status to track Azure Pipelines and live DNS state.</p>
+            <label>PR URL or number<input id="pr-status-input" placeholder="https://dev.azure.com/org/project/_git/repo/pullrequest/123" /></label>
             <button type="button" id="refresh-status-btn" class="secondary-btn">Refresh status</button>
             <pre id="pr-status-output" class="diff-preview"></pre>
           </section>
 
           <section class="architecture">
             <h3>How this works</h3>
-            <p>This service creates a pull request only. CI validates the manifest, then ArgoCD and ExternalDNS apply it after merge.</p>
-            <pre class="architecture-flow">UI -> Pull Request -> CI -> Merge -> ArgoCD -> DNSEndpoint -> ExternalDNS -> Cloud DNS</pre>
+            <p>This service opens an Azure DevOps pull request only. Azure Pipelines validate the manifest, then Argo CD and ExternalDNS apply it after merge.</p>
+            <pre class="architecture-flow">UI -> Azure DevOps PR -> Azure Pipelines -> Merge -> Argo CD -> DNSEndpoint -> ExternalDNS -> Cloud DNS</pre>
             <p class="architecture-note">Git is the source of truth. The UI does not write Cloud DNS directly.</p>
           </section>
         </section>

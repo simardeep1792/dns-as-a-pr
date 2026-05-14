@@ -10,6 +10,7 @@ const copyDiffBtn = document.getElementById("copy-diff-btn");
 const refreshStatusBtn = document.getElementById("refresh-status-btn");
 const prStatusInput = document.getElementById("pr-status-input");
 const prStatusOutput = document.getElementById("pr-status-output");
+const destination = document.getElementById("destination");
 const recordTypeSelect = document.getElementById("record-type");
 const targetHelp = document.getElementById("target-help");
 const submitBtn = document.getElementById("submit-btn");
@@ -20,6 +21,17 @@ const steps = Array.from(document.querySelectorAll(".step"));
 
 let currentStep = 1;
 let isValidated = false;
+
+function renderDestination(info = {}) {
+  const providerLabel = info.provider === "azure-devops" || info.provider === "dry-run"
+    ? "Azure DevOps"
+    : info.provider || "Git provider";
+  destination.textContent = [
+    `${providerLabel} destination`,
+    `${info.organization || "EDIP-PIDE"} / ${info.project || "dns-as-a-pr"} / ${info.repository || "dns-as-a-pr"}`,
+    `Target branch: ${info.baseBranch || "main"}`
+  ].join("\n");
+}
 
 function updateTargetHelp() {
   const type = recordTypeSelect.value;
@@ -119,6 +131,7 @@ previewBtn.addEventListener("click", async () => {
     const body = await callApi("/api/validate");
     yamlPreview.textContent = body.yaml;
     meta.textContent = `Path: ${body.filePath} | Branch: ${body.branch}`;
+    renderDestination(body.destination);
     checks.textContent = formatChecks(body.checks);
     prSummary.textContent = `PR title: ${body.title}`;
     manifestDiff.textContent = body.manifestDiff || "";
@@ -129,7 +142,7 @@ previewBtn.addEventListener("click", async () => {
     isValidated = !hasFail;
     submitBtn.disabled = hasFail;
     if (!hasFail) {
-      result.textContent = result.textContent || "Validation passed. You can now create the pull request.";
+      result.textContent = result.textContent || "Validation passed. You can now create the Azure DevOps pull request.";
     }
   } catch (error) {
     isValidated = false;
@@ -141,14 +154,21 @@ previewBtn.addEventListener("click", async () => {
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
   if (!isValidated) {
-    result.textContent = "Validate request first."
+    result.textContent = "Validate request first.";
     return;
   }
   result.textContent = "Submitting...";
   try {
     const body = await callApi("/api/requests");
-    result.innerHTML = `Pull request created: <a href="${body.url}" target="_blank" rel="noreferrer">${body.url}</a>`;
+    result.textContent = "Pull request created: ";
+    const link = document.createElement("a");
+    link.href = body.url;
+    link.target = "_blank";
+    link.rel = "noreferrer";
+    link.textContent = body.url;
+    result.appendChild(link);
     prStatusInput.value = body.url;
+    renderDestination(body.destination);
   } catch (error) {
     result.textContent = error.message;
   }
@@ -186,6 +206,7 @@ nextStepBtn.addEventListener("click", () => {
 
 setStep(1);
 updateTargetHelp();
+renderDestination();
 
 copyDiffBtn.addEventListener("click", async () => {
   const text = manifestDiff.textContent || "";

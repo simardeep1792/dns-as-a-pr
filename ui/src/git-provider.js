@@ -1,4 +1,11 @@
 class GitProvider {
+  getDestination() {
+    return {
+      provider: "unknown",
+      baseBranch: "main"
+    };
+  }
+
   async createBranch(_) {
     throw new Error("not implemented");
   }
@@ -33,6 +40,16 @@ class AzureDevOpsProvider extends GitProvider {
   get authHeader() {
     const raw = `:${this.token}`;
     return `Basic ${Buffer.from(raw, "utf8").toString("base64")}`;
+  }
+
+  getDestination() {
+    return {
+      provider: "azure-devops",
+      organization: this.organization,
+      project: this.project,
+      repository: this.repository,
+      baseBranch: process.env.GIT_BASE_BRANCH || "main"
+    };
   }
 
   async request(path, options = {}) {
@@ -175,6 +192,16 @@ class AzureDevOpsProvider extends GitProvider {
 }
 
 class DryRunProvider extends GitProvider {
+  getDestination() {
+    return {
+      provider: "dry-run",
+      organization: process.env.AZDO_ORGANIZATION || "EDIP-PIDE",
+      project: process.env.AZDO_PROJECT || "dns-as-a-pr",
+      repository: process.env.AZDO_REPOSITORY || "dns-as-a-pr",
+      baseBranch: process.env.GIT_BASE_BRANCH || "main"
+    };
+  }
+
   async createBranch(_) {}
 
   async upsertFile(_) {}

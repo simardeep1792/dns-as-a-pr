@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": ["apiVersion", "kind", "metadata", "spec"],
+  "properties": {
+    "apiVersion": { "const": "cert-manager.io/v1" },
+    "kind": { "const": "Certificate" },
+    "metadata": { "type": "object" },
+    "spec": {
+      "type": "object",
+      "required": ["secretName", "issuerRef", "dnsNames"],
+      "properties": {
+        "secretName": { "type": "string", "minLength": 1 },
+        "issuerRef": {
+          "type": "object",
+          "required": ["name"],
+          "properties": {
+            "group": { "type": "string" },
+            "kind": { "type": "string" },
+            "name": { "type": "string", "minLength": 1 }
+          }
+        },
+        "dnsNames": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 1
+        }
+      }
+    }
+  }
+}
