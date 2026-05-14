@@ -7,6 +7,8 @@
 3. Runtime automation should use service identities, not personal user tokens.
 4. GCP access should use Workload Identity instead of service account keys.
 
+For this POC, cert-manager reuses the existing ExternalDNS Google service account rather than introducing a second DNS-writing identity before the flow is stable.
+
 ## Current Runtime Secrets
 
 The UI still requires an Azure DevOps token at runtime to open pull requests. That token should be:

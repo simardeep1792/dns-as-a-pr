@@ -88,6 +88,7 @@ Operators should provision:
 1. An Azure DevOps service identity with least-privilege repository permissions.
 2. Kubernetes secrets or an external secret backend for runtime tokens.
 3. Container registry credentials for the UI image push path.
+4. A GKE Workload Identity binding that lets the `cert-manager/cert-manager` Kubernetes service account impersonate the Cloud DNS-capable Google service account.
 
 See:
 

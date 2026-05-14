@@ -84,4 +84,4 @@ patches:
       - op: add
         path: /metadata/annotations
         value:
-          iam.gke.io/gcp-service-account: cert-manager@edip-aurora-fgc.iam.gserviceaccount.com
+          iam.gke.io/gcp-service-account: external-dns@edip-aurora-fgc.iam.gserviceaccount.com

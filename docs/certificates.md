@@ -17,7 +17,7 @@ Expose `dns-ui.simardeep.xyz` over HTTPS using cert-manager and Let’s Encrypt 
 
 The cert-manager controller uses GKE Workload Identity to solve DNS-01 challenges through Cloud DNS.
 
-The repo now provisions a dedicated Google service account through OpenTofu and binds it to the `cert-manager` Kubernetes service account.
+For this POC, cert-manager reuses the existing Cloud DNS-capable Google service account already used by ExternalDNS. The `cert-manager` Kubernetes service account is linked to that Google service account through GKE Workload Identity.
 
 Required permissions:
 
