@@ -53,17 +53,18 @@ steps:
       docker build -f ui/Dockerfile -t "$IMAGE:$(Build.SourceVersion)" -t "$IMAGE:main" ui
     displayName: Build UI container image
 
-  - task: Docker@2
-    displayName: Login to GAR
-    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'), eq(variables['GAR_PUSH_ENABLED'], 'true'))
-    inputs:
-      command: login
-      containerRegistry: $(GAR_DOCKER_SERVICE_CONNECTION)
-
   - bash: |
       set -euo pipefail
+      if [ "$(Build.SourceBranch)" != "refs/heads/main" ] || [ "$(GAR_PUSH_ENABLED)" != "true" ]; then
+        echo "Skipping registry push"
+        exit 0
+      fi
+
+      : "${GAR_REGISTRY_USERNAME:?GAR_REGISTRY_USERNAME is required when GAR_PUSH_ENABLED=true}"
+      : "${GAR_REGISTRY_PASSWORD:?GAR_REGISTRY_PASSWORD is required when GAR_PUSH_ENABLED=true}"
+
       IMAGE="$(GAR_REGION)-docker.pkg.dev/$(GCP_PROJECT_ID)/$(GAR_REPOSITORY)/$(GAR_IMAGE_NAME)"
+      echo "$GAR_REGISTRY_PASSWORD" | docker login -u "$GAR_REGISTRY_USERNAME" --password-stdin "https://$(GAR_REGION)-docker.pkg.dev"
       docker push "$IMAGE:$(Build.SourceVersion)"
       docker push "$IMAGE:main"
     displayName: Push UI container image to GAR
-    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'), eq(variables['GAR_PUSH_ENABLED'], 'true'))
