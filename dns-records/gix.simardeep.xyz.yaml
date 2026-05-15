@@ -1,0 +1,21 @@
+apiVersion: externaldns.k8s.io/v1alpha1
+kind: DNSEndpoint
+metadata:
+  name: gix-simardeep-xyz
+  namespace: dns
+  annotations:
+    simardeep.xyz/source-repository: "https://dev.azure.com/EDIP-PIDE/_git/dns-as-a-pr"
+    simardeep.xyz/zone-scope: "simardeep-xyz"
+  labels:
+    simardeep.xyz/controlled-by: "dns-as-a-pr"
+    simardeep.xyz/project-name: "dd"
+    simardeep.xyz/project-id: "dd"
+    simardeep.xyz/owner: "dd"
+spec:
+  endpoints:
+    - dnsName: "gix.simardeep.xyz"
+      recordType: "NS"
+      recordTTL: 300
+      targets:
+        - "duud.com"
+        - "duud.com"
