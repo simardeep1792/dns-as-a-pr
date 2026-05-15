@@ -26,7 +26,7 @@ variables:
   GAR_REGION: northamerica-northeast1
   GAR_REPOSITORY: dns-as-a-pr
   GAR_IMAGE_NAME: dns-request-ui
-  GAR_PUSH_ENABLED: 'false'
+  GAR_PUSH_ENABLED: 'true'
 
 steps:
   - checkout: self
