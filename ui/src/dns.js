@@ -233,4 +233,4 @@ function renderYaml(req) {
   return `${lines.join("\n")}\n`;
 }
 
-export { normalizeRequest, renderYaml, filePathFor, branchNameFor };
+export { normalizeRequest, renderYaml, filePathFor, branchNameFor, validateTargets };

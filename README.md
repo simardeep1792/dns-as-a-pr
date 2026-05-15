@@ -126,6 +126,8 @@ scripts/validate-infra.sh
 
 The UI is a thin request layer. It does not write Cloud DNS directly and it does not call GCP APIs.
 
+The public UI uses the official GC Design System web components package and shows the generated `DNSEndpoint` YAML before opening the pull request.
+
 It creates Azure DevOps pull requests against:
 
 1. Organization: `EDIP-PIDE`

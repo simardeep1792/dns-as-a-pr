@@ -243,7 +243,7 @@ class DryRunProvider extends GitProvider {
 function createProviderFromEnv() {
   const mode = process.env.GIT_PROVIDER_MODE || "dry-run";
   if (mode === "azure-devops") {
-    const token = process.env.AZDO_SERVICE_TOKEN || process.env.AZDO_TOKEN;
+    const token = process.env.AZDO_SERVICE_TOKEN;
     const organization = process.env.AZDO_ORGANIZATION;
     const project = process.env.AZDO_PROJECT;
     const repository = process.env.AZDO_REPOSITORY;

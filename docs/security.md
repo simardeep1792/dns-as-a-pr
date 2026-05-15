@@ -17,6 +17,8 @@ The UI requires `AZDO_SERVICE_TOKEN` at runtime to open pull requests. That toke
 2. Stored in Kubernetes through a secret management path approved for the cluster.
 3. Rotated on a defined schedule.
 
+The runtime should not use personal access tokens tied to an individual user. Use a service identity with only the Azure Repos permissions needed to read, create branches, push request manifests, and open pull requests.
+
 ## Public UI Risk
 
 The UI is intentionally public for this POC. That means request validation must stay strict and the backend should be treated as an internet-facing service.

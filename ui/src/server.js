@@ -10,6 +10,7 @@ import { createProviderFromEnv } from "./git-provider.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const publicDir = path.resolve(__dirname, "../public");
+const gcdsDir = path.resolve(__dirname, "../node_modules/@gcds-core/components/dist/gcds");
 const repoRoot = path.resolve(__dirname, "../..");
 
 const app = express();
@@ -35,6 +36,7 @@ const policy = {
 };
 
 app.use(express.json({ limit: "32kb" }));
+app.use("/gcds", express.static(gcdsDir));
 app.use(express.static(publicDir));
 
 function buildRequestArtifacts(payload) {

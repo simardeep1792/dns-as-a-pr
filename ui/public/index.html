@@ -4,221 +4,227 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>DNS as a PR</title>
+    <link rel="stylesheet" href="/gcds/gcds.css" />
     <link rel="stylesheet" href="/styles.css" />
+    <script type="module" src="/gcds/gcds.esm.js"></script>
   </head>
   <body>
-    <a class="skip-link" href="#main-content">Skip to main content</a>
+    <gcds-header lang="en" skip-to-href="#main-content" lang-href="#" signature-has-link="true">
+      <gcds-breadcrumbs slot="breadcrumb">
+        <gcds-breadcrumbs-item href="/">DNS as a PR</gcds-breadcrumbs-item>
+      </gcds-breadcrumbs>
+    </gcds-header>
 
-    <header class="gc-header" role="banner">
-      <div class="container gc-header__inner">
-        <div>
-          <div class="gc-wordmark">Government of Canada</div>
-          <div class="gc-wordmark-fr">Gouvernement du Canada</div>
-        </div>
-        <div class="gc-language">English</div>
-      </div>
-    </header>
-
-    <div class="service-bar">
-      <div class="container">
-        <span class="service-name">DNS as a PR</span>
-      </div>
-    </div>
-
-    <div class="container progress-bar" id="progress-bar" style="display: none;">
-      <span class="step-marker" id="step-number">1</span>
-      <span id="step-title">Choose record type</span>
-      <span class="step-progress" id="step-progress">Step 1 of 4</span>
-    </div>
-
-    <main id="main-content" class="container main-layout">
-      <section id="landing-screen" class="content-width">
-        <p class="breadcrumb">Home / DNS as a PR</p>
-        <h1>DNS as a PR</h1>
-        <p class="lead">
-          Use this service to create an Azure DevOps pull request for DNS records in the managed zone.
-          The service does not write directly to Cloud DNS.
-        </p>
-
-        <div class="notice">
-          <h2>Before you start</h2>
-          <p>
-            Normal A, CNAME, and TXT records use the existing DNS zone. You only need nameservers when
-            requesting an NS delegation for a subdomain.
-          </p>
+    <main id="main-content">
+      <gcds-container size="lg" centered>
+        <div class="service-heading">
+          <p class="service-label">Protected DNS request service</p>
+          <gcds-heading tag="h1">DNS as a PR</gcds-heading>
+          <gcds-text size="lg">
+            Create an Azure DevOps pull request for DNS changes in the managed Google Cloud DNS zone.
+            This service generates reviewable YAML and never writes directly to Cloud DNS.
+          </gcds-text>
         </div>
 
-        <h2>Choose the record type for the pull request</h2>
-        <div class="record-options" aria-label="DNS record type">
-          <button class="record-option task-option" data-task="a-record" type="button">
-            <span class="record-option__type">A</span>
-            <span class="record-option__title">Point a hostname to IPv4 address</span>
-            <span class="record-option__text">Use this for an application or service with one or more IPv4 addresses.</span>
-          </button>
-          <button class="record-option task-option" data-task="cname-record" type="button">
-            <span class="record-option__type">CNAME</span>
-            <span class="record-option__title">Alias a hostname to another hostname</span>
-            <span class="record-option__text">Use this when another DNS name is the canonical target.</span>
-          </button>
-          <button class="record-option task-option" data-task="txt-record" type="button">
-            <span class="record-option__type">TXT</span>
-            <span class="record-option__title">Publish a verification or policy value</span>
-            <span class="record-option__text">Use this for domain verification, SPF, or other text values.</span>
-          </button>
-          <button class="record-option task-option" data-task="ns-record" type="button">
-            <span class="record-option__type">NS</span>
-            <span class="record-option__title">Delegate a subdomain to another DNS zone</span>
-            <span class="record-option__text">Create the managed zone first, then submit its nameservers.</span>
-          </button>
+        <div id="progress-bar" class="progress-shell" style="display: none;">
+          <gcds-stepper id="gcds-stepper" current-step="1" total-steps="4" tag="h2">Record details</gcds-stepper>
         </div>
 
-        <h2>How the request is processed</h2>
-        <ol class="process-list">
-          <li>The request is validated by this service.</li>
-          <li>The service creates an Azure DevOps branch and pull request.</li>
-          <li>Azure Pipelines validate the DNS manifest.</li>
-          <li>After approval and merge, Argo CD and ExternalDNS apply the approved record.</li>
-        </ol>
-      </section>
+        <section id="landing-screen" class="screen content-width">
+          <gcds-alert alert-role="info" heading="Before you start" hide-close-btn>
+            <p>
+              Use A, CNAME, and TXT requests for records in the existing managed zone. Use NS only when
+              you have already created a child DNS zone elsewhere and need to delegate the subdomain to
+              that zone's authoritative nameservers.
+            </p>
+          </gcds-alert>
 
-      <section id="step1-screen" class="content-width step-screen" style="display: none;">
-        <h1 id="record-form-title">DNS record details</h1>
-        <p id="record-form-description" class="lead">Enter the record values to include in the pull request.</p>
-
-        <form id="step1-form" novalidate>
-          <div class="form-group">
-            <label for="website-name">Subdomain</label>
-            <div class="input-suffix">
-              <input type="text" id="website-name" name="subdomain" placeholder="example" required />
-              <span>.simardeep.xyz</span>
-            </div>
-            <p class="field-help">Enter only the subdomain label. Do not include the parent zone.</p>
+          <gcds-heading tag="h2">Choose the record type for the pull request</gcds-heading>
+          <div class="record-options" aria-label="DNS record type">
+            <button class="record-option task-option" data-task="a-record" type="button">
+              <span class="record-option__type">A</span>
+              <span class="record-option__title">Point a hostname to IPv4 address</span>
+              <span class="record-option__text">Use this for an application or service with one or more IPv4 addresses.</span>
+            </button>
+            <button class="record-option task-option" data-task="aaaa-record" type="button">
+              <span class="record-option__type">AAAA</span>
+              <span class="record-option__title">Point a hostname to IPv6 address</span>
+              <span class="record-option__text">Use this for services that publish one or more IPv6 addresses.</span>
+            </button>
+            <button class="record-option task-option" data-task="cname-record" type="button">
+              <span class="record-option__type">CNAME</span>
+              <span class="record-option__title">Alias a hostname to another hostname</span>
+              <span class="record-option__text">Use this when another DNS name is the canonical target.</span>
+            </button>
+            <button class="record-option task-option" data-task="txt-record" type="button">
+              <span class="record-option__type">TXT</span>
+              <span class="record-option__title">Publish a verification or policy value</span>
+              <span class="record-option__text">Use this for domain verification, SPF, DKIM, or other text values.</span>
+            </button>
+            <button class="record-option task-option" data-task="ns-record" type="button">
+              <span class="record-option__type">NS</span>
+              <span class="record-option__title">Delegate a subdomain to another DNS zone</span>
+              <span class="record-option__text">Create the child zone first, then submit at least two authoritative nameservers.</span>
+            </button>
           </div>
 
-          <div class="form-group" id="target-input-container">
-            <label for="server-ip" id="target-label">IPv4 address</label>
-            <textarea id="server-ip" name="targets" placeholder="203.0.113.10" rows="2" required></textarea>
-            <p class="field-help" id="target-help">Use one or more IPv4 addresses. Put each value on a new line.</p>
-          </div>
+          <gcds-heading tag="h2">How the request is processed</gcds-heading>
+          <ol class="process-list">
+            <li>The request is validated by this service.</li>
+            <li>The service creates an Azure DevOps branch and pull request.</li>
+            <li>Azure Pipelines validate the generated DNS manifest.</li>
+            <li>After approval and merge, Argo CD and ExternalDNS apply the approved record.</li>
+          </ol>
+        </section>
 
-          <div class="form-group">
-            <label for="ttl-select">Time to live</label>
-            <select id="ttl-select" name="ttl" required>
+        <section id="step1-screen" class="screen content-width" style="display: none;">
+          <gcds-heading tag="h2" id="record-form-title">DNS record details</gcds-heading>
+          <gcds-text id="record-form-description">Enter the record values to include in the pull request.</gcds-text>
+          <div id="step1-error" class="error-box" hidden></div>
+
+          <form id="step1-form" novalidate>
+            <gcds-input
+              input-id="website-name"
+              id="website-name"
+              name="subdomain"
+              label="Subdomain"
+              hint="Enter only the subdomain label. The parent zone .simardeep.xyz is added automatically."
+              required
+              error-message="Enter a valid subdomain."
+              size="50">
+            </gcds-input>
+
+            <gcds-textarea
+              textarea-id="server-ip"
+              id="server-ip"
+              name="targets"
+              label="IPv4 address"
+              hint="Use one or more IPv4 addresses. Put each value on a new line."
+              rows="2"
+              required
+              error-message="Enter at least one target.">
+            </gcds-textarea>
+
+            <gcds-select
+              select-id="ttl-select"
+              id="ttl-select"
+              name="ttl"
+              label="Time to live"
+              hint="Use 300 seconds for testing. Use a longer value for stable production records."
+              default-value="300"
+              value="300"
+              required>
               <option value="300" selected>300 seconds</option>
               <option value="900">900 seconds</option>
               <option value="3600">3600 seconds</option>
               <option value="86400">86400 seconds</option>
-            </select>
-            <p class="field-help">Use 300 seconds for testing. Use a longer value for stable production records.</p>
+            </gcds-select>
+
+            <div class="button-row">
+              <gcds-button type="button" button-role="secondary" id="step1-back" button-id="step1-back-button">Back</gcds-button>
+              <gcds-button type="submit" button-role="primary" button-id="step1-continue-button">Continue</gcds-button>
+            </div>
+          </form>
+        </section>
+
+        <section id="step2-screen" class="screen content-width" style="display: none;">
+          <gcds-heading tag="h2">Requester information</gcds-heading>
+          <gcds-text>Provide ownership metadata so reviewers know who is responsible for the record.</gcds-text>
+          <div id="step2-error" class="error-box" hidden></div>
+
+          <form id="step2-form" novalidate>
+            <gcds-input input-id="team-name" id="team-name" name="owner" label="Team or owner" hint="Use the accountable team or service owner." required error-message="Enter the team or owner." size="50"></gcds-input>
+            <gcds-input input-id="project-name" id="project-name" name="projectName" label="Project name" hint="Use the business or service project name." required error-message="Enter the project name." size="50"></gcds-input>
+            <gcds-input input-id="project-id" id="project-id" name="projectId" label="Project ID" hint="Use the cloud, service, or internal project identifier. This is required for auditability." required error-message="Enter the project ID." size="50"></gcds-input>
+            <gcds-input input-id="source-repo" id="source-repo" name="sourceRepository" type="url" label="Source repository" hint="Use the Azure DevOps repository that owns the application or service." required error-message="Enter the Azure DevOps source repository URL." size="75"></gcds-input>
+
+            <div class="button-row">
+              <gcds-button type="button" button-role="secondary" id="step2-back" button-id="step2-back-button">Back</gcds-button>
+              <gcds-button type="submit" button-role="primary" button-id="step2-continue-button">Continue</gcds-button>
+            </div>
+          </form>
+        </section>
+
+        <section id="step3-screen" class="screen content-width" style="display: none;">
+          <gcds-heading tag="h2">Review and submit</gcds-heading>
+          <gcds-text>The service will open a pull request. Nothing is applied to DNS until the pull request is approved and merged.</gcds-text>
+
+          <dl class="review-list">
+            <dt>DNS name</dt>
+            <dd id="review-website"></dd>
+            <dt>Record type</dt>
+            <dd id="review-record-type"></dd>
+            <dt>Targets</dt>
+            <dd id="review-ip"></dd>
+            <dt>TTL</dt>
+            <dd id="review-ttl"></dd>
+            <dt>Owner</dt>
+            <dd id="review-team"></dd>
+            <dt>Project</dt>
+            <dd id="review-project"></dd>
+            <dt>Project ID</dt>
+            <dd id="review-project-id"></dd>
+          </dl>
+
+          <div id="validation-panel" class="validation-panel" style="display: none;">
+            <gcds-heading tag="h3">Automated checks</gcds-heading>
+            <div id="validation-results"></div>
           </div>
+
+          <div id="yaml-preview-panel" class="yaml-preview" style="display: none;">
+            <gcds-heading tag="h3">Generated pull request file</gcds-heading>
+            <p>This is the exact YAML file that will be added to the pull request.</p>
+            <dl class="artifact-list">
+              <dt>File path</dt>
+              <dd id="preview-file-path"></dd>
+              <dt>Branch</dt>
+              <dd id="preview-branch"></dd>
+              <dt>Pull request title</dt>
+              <dd id="preview-title"></dd>
+            </dl>
+            <pre><code id="yaml-preview"></code></pre>
+          </div>
+
+          <gcds-alert alert-role="info" heading="What happens next" hide-close-btn>
+            <ol>
+              <li>An Azure DevOps pull request is created.</li>
+              <li>Reviewers approve or reject the change.</li>
+              <li>After merge, Argo CD syncs the manifest and ExternalDNS reconciles the record.</li>
+            </ol>
+          </gcds-alert>
 
           <div class="button-row">
-            <button type="button" class="button button-secondary" id="step1-back">Back</button>
-            <button type="submit" class="button button-primary">Continue</button>
+            <gcds-button type="button" button-role="secondary" id="step3-back" button-id="step3-back-button">Back</gcds-button>
+            <gcds-button type="button" button-role="primary" id="submit-request" button-id="submit-request-button">Submit request</gcds-button>
           </div>
-        </form>
-      </section>
+        </section>
 
-      <section id="step2-screen" class="content-width step-screen" style="display: none;">
-        <h1>Requester information</h1>
-        <p class="lead">Provide ownership metadata so reviewers know who is responsible for the record in the pull request.</p>
+        <section id="step4-screen" class="screen content-width" style="display: none;">
+          <gcds-heading tag="h2">Request submitted</gcds-heading>
+          <gcds-alert alert-role="success" heading="A pull request has been opened for review" hide-close-btn>
+            <p><strong>Reference number:</strong> <span id="request-reference" class="monospace"></span></p>
+            <p id="pull-request-panel" style="display: none;"><strong>Azure DevOps pull request:</strong> <a id="pull-request-link" href="#" target="_blank" rel="noopener noreferrer"></a></p>
+          </gcds-alert>
 
-        <form id="step2-form" novalidate>
-          <div class="form-group">
-            <label for="team-name">Team or owner</label>
-            <input type="text" id="team-name" placeholder="Platform Team" required />
-          </div>
-
-          <div class="form-group">
-            <label for="project-name">Project name</label>
-            <input type="text" id="project-name" placeholder="DNS platform" required />
-          </div>
-
-          <div class="form-group">
-            <label for="project-id">Project ID</label>
-            <input type="text" id="project-id" placeholder="edip-aurora-fgc" />
-            <p class="field-help">If left blank, the service will generate a temporary project ID.</p>
-          </div>
-
-          <div class="form-group">
-            <label for="source-repo">Source repository</label>
-            <input type="url" id="source-repo" placeholder="https://dev.azure.com/EDIP-PIDE/dns-as-a-pr/_git/dns-as-a-pr" />
-            <p class="field-help">Use the Azure DevOps repository that owns the application or service.</p>
-          </div>
-
-          <div class="button-row">
-            <button type="button" class="button button-secondary" id="step2-back">Back</button>
-            <button type="submit" class="button button-primary">Continue</button>
-          </div>
-        </form>
-      </section>
-
-      <section id="step3-screen" class="content-width step-screen" style="display: none;">
-        <h1>Review and submit</h1>
-        <p class="lead">The service will open a pull request. Nothing is applied to DNS until the pull request is approved and merged.</p>
-
-        <dl class="review-list">
-          <dt>DNS name</dt>
-          <dd id="review-website"></dd>
-          <dt>Targets</dt>
-          <dd id="review-ip"></dd>
-          <dt>TTL</dt>
-          <dd id="review-ttl"></dd>
-          <dt>Owner</dt>
-          <dd id="review-team"></dd>
-          <dt>Project</dt>
-          <dd id="review-project"></dd>
-          <dt>Project ID</dt>
-          <dd id="review-project-id"></dd>
-        </dl>
-
-        <div id="validation-panel" class="validation-panel" style="display: none;">
-          <h2>Automated checks</h2>
-          <div id="validation-results"></div>
-        </div>
-
-        <div class="notice">
-          <h2>What happens next</h2>
-          <ol>
-            <li>An Azure DevOps pull request is created.</li>
-            <li>Reviewers approve or reject the change.</li>
-            <li>After merge, Argo CD syncs the manifest and ExternalDNS reconciles the record.</li>
+          <gcds-heading tag="h3">Next steps</gcds-heading>
+          <ol class="process-list">
+            <li>Review the generated pull request.</li>
+            <li>Wait for Azure Pipelines validation.</li>
+            <li>Merge only after the request is approved.</li>
           </ol>
-        </div>
 
-        <div class="button-row">
-          <button type="button" class="button button-secondary" id="step3-back">Back</button>
-          <button type="button" class="button button-primary" id="submit-request">Submit request</button>
-        </div>
-      </section>
-
-      <section id="step4-screen" class="content-width step-screen" style="display: none;">
-        <h1>Request submitted</h1>
-        <p class="lead">A pull request has been opened for review.</p>
-
-        <div class="success-panel">
-          <p><strong>Reference number:</strong> <span id="request-reference" class="monospace"></span></p>
-          <p id="pull-request-panel" style="display: none;"><strong>Azure DevOps pull request:</strong> <a id="pull-request-link" href="#" target="_blank" rel="noopener noreferrer"></a></p>
-        </div>
-
-        <h2>Next steps</h2>
-        <ol class="process-list">
-          <li>Review the generated pull request.</li>
-          <li>Wait for Azure Pipelines validation.</li>
-          <li>Merge only after the request is approved.</li>
-        </ol>
-
-        <button class="button button-secondary" id="submit-another">Submit another request</button>
-      </section>
+          <gcds-button type="button" button-role="secondary" id="submit-another" button-id="submit-another-button">Submit another request</gcds-button>
+        </section>
+      </gcds-container>
     </main>
 
+    <gcds-footer display="compact"></gcds-footer>
+
     <div class="modal" id="submittingModal" role="status" aria-live="polite" aria-hidden="true">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <p class="spinner" aria-hidden="true"></p>
-          <h2>Submitting request</h2>
-          <p>This may take a few seconds.</p>
-        </div>
+      <div class="modal-content">
+        <p class="spinner" aria-hidden="true"></p>
+        <gcds-heading tag="h2">Submitting request</gcds-heading>
+        <p>This may take a few seconds.</p>
       </div>
     </div>
 

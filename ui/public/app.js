@@ -1,4 +1,5 @@
 let selectedTask = '';
+let lastValidation = null;
 let formData = {
   taskType: '',
   subdomain: '',
@@ -18,9 +19,7 @@ const step2Screen = document.getElementById('step2-screen');
 const step3Screen = document.getElementById('step3-screen');
 const step4Screen = document.getElementById('step4-screen');
 const progressBar = document.getElementById('progress-bar');
-const stepNumber = document.getElementById('step-number');
-const stepTitle = document.getElementById('step-title');
-const stepProgress = document.getElementById('step-progress');
+const stepper = document.getElementById('gcds-stepper');
 const taskOptions = document.querySelectorAll('.task-option');
 const step1Form = document.getElementById('step1-form');
 const step2Form = document.getElementById('step2-form');
@@ -31,6 +30,7 @@ const submitRequestBtn = document.getElementById('submit-request');
 const submitAnotherBtn = document.getElementById('submit-another');
 const submittingModal = document.getElementById('submittingModal');
 const reviewWebsite = document.getElementById('review-website');
+const reviewRecordType = document.getElementById('review-record-type');
 const reviewIp = document.getElementById('review-ip');
 const reviewTtl = document.getElementById('review-ttl');
 const reviewTeam = document.getElementById('review-team');
@@ -43,12 +43,24 @@ const pullRequestPanel = document.getElementById('pull-request-panel');
 const pullRequestLink = document.getElementById('pull-request-link');
 const recordFormTitle = document.getElementById('record-form-title');
 const recordFormDescription = document.getElementById('record-form-description');
+const yamlPreviewPanel = document.getElementById('yaml-preview-panel');
+const yamlPreview = document.getElementById('yaml-preview');
+const previewFilePath = document.getElementById('preview-file-path');
+const previewBranch = document.getElementById('preview-branch');
+const previewTitle = document.getElementById('preview-title');
+const step1Error = document.getElementById('step1-error');
+const step2Error = document.getElementById('step2-error');
 
 const taskConfigs = {
   'a-record': {
     recordType: 'A',
     title: 'A record details',
     description: 'Create or update an IPv4 address record through an Azure DevOps pull request.'
+  },
+  'aaaa-record': {
+    recordType: 'AAAA',
+    title: 'AAAA record details',
+    description: 'Create or update an IPv6 address record through an Azure DevOps pull request.'
   },
   'cname-record': {
     recordType: 'CNAME',
@@ -58,21 +70,56 @@ const taskConfigs = {
   'txt-record': {
     recordType: 'TXT',
     title: 'TXT record details',
-    description: 'Publish a verification, SPF, or other text value.'
+    description: 'Publish a verification, SPF, DKIM, or other text value.'
   },
   'ns-record': {
     recordType: 'NS',
     title: 'NS delegation details',
-    description: 'Delegate this subdomain to an existing managed zone by submitting its nameservers.'
+    description: 'Delegate this subdomain to an existing child DNS zone by submitting its authoritative nameservers.'
   }
 };
+
+function onGcdsAction(element, handler) {
+  element.addEventListener('gcdsClick', handler);
+}
+
+function getFieldValue(id) {
+  const element = document.getElementById(id);
+  return String(element.value || '').trim();
+}
+
+function setFieldValue(id, value) {
+  const element = document.getElementById(id);
+  element.value = value;
+  element.setAttribute('value', value);
+}
+
+function setError(container, message) {
+  if (!message) {
+    container.hidden = true;
+    container.innerHTML = '';
+    return;
+  }
+
+  container.hidden = false;
+  container.innerHTML = `<gcds-alert alert-role="danger" heading="There is a problem" hide-close-btn><p>${escapeHtml(message)}</p></gcds-alert>`;
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
 
 function showScreen(screenName) {
   [landingScreen, step1Screen, step2Screen, step3Screen, step4Screen].forEach((screen) => {
     screen.style.display = 'none';
   });
 
-  progressBar.style.display = screenName === 'landing' ? 'none' : 'flex';
+  progressBar.style.display = screenName === 'landing' ? 'none' : 'block';
   updateProgressBar(screenName);
 
   const screenMap = {
@@ -85,15 +132,16 @@ function showScreen(screenName) {
 
   if (screenMap[screenName]) {
     screenMap[screenName].style.display = 'block';
+    screenMap[screenName].querySelector('gcds-heading')?.focus?.();
   }
 }
 
 function updateProgressBar(step) {
   const steps = {
-    step1: { number: 1, title: 'Record details', total: 4 },
-    step2: { number: 2, title: 'Requester information', total: 4 },
-    step3: { number: 3, title: 'Review and submit', total: 4 },
-    step4: { number: 4, title: 'Request submitted', total: 4 }
+    step1: { number: 1, title: 'Record details' },
+    step2: { number: 2, title: 'Requester information' },
+    step3: { number: 3, title: 'Review and submit' },
+    step4: { number: 4, title: 'Request submitted' }
   };
 
   const stepInfo = steps[step];
@@ -101,9 +149,8 @@ function updateProgressBar(step) {
     return;
   }
 
-  stepNumber.textContent = stepInfo.number;
-  stepTitle.textContent = stepInfo.title;
-  stepProgress.textContent = `Step ${stepInfo.number} of ${stepInfo.total}`;
+  stepper.setAttribute('current-step', String(stepInfo.number));
+  stepper.textContent = stepInfo.title;
 }
 
 function populateReviewScreen() {
@@ -115,11 +162,12 @@ function populateReviewScreen() {
   };
 
   reviewWebsite.textContent = `${formData.subdomain}.simardeep.xyz`;
+  reviewRecordType.textContent = formData.recordType;
   reviewIp.textContent = formData.targets.join(', ');
   reviewTtl.textContent = ttlMap[formData.recordTTL] || `${formData.recordTTL} seconds`;
-  reviewTeam.textContent = formData.owner || '';
-  reviewProject.textContent = formData.projectName || '';
-  reviewProjectId.textContent = formData.projectId || 'N/A';
+  reviewTeam.textContent = formData.owner;
+  reviewProject.textContent = formData.projectName;
+  reviewProjectId.textContent = formData.projectId;
 }
 
 function parseTargets(rawValue) {
@@ -160,10 +208,19 @@ function renderValidation(validation) {
   validationResults.appendChild(list);
 }
 
-function showFormError(message) {
+function renderYamlPreview(validation) {
+  yamlPreviewPanel.style.display = 'block';
+  previewFilePath.textContent = validation.filePath;
+  previewBranch.textContent = validation.branch;
+  previewTitle.textContent = validation.title;
+  yamlPreview.textContent = validation.yaml;
+}
+
+function showValidationError(message) {
   validationPanel.style.display = 'block';
   validationPanel.className = 'validation-panel fail';
   validationResults.textContent = message;
+  yamlPreviewPanel.style.display = 'none';
 }
 
 function generateRequestPayload() {
@@ -215,34 +272,94 @@ function hideSubmittingModal() {
 }
 
 function updateInputsForRecordType(recordType) {
-  const targetLabel = document.getElementById('target-label');
   const targetInput = document.getElementById('server-ip');
-  const targetHelp = document.getElementById('target-help');
   targetInput.value = '';
-  targetInput.rows = 2;
+  targetInput.setAttribute('value', '');
+  targetInput.setAttribute('rows', '2');
 
-  switch (recordType) {
-    case 'A':
-      targetLabel.textContent = 'IPv4 address';
-      targetInput.placeholder = '203.0.113.10';
-      targetHelp.textContent = 'Use one or more IPv4 addresses. Put each value on a new line.';
-      break;
-    case 'CNAME':
-      targetLabel.textContent = 'Canonical DNS name';
-      targetInput.placeholder = 'example.service.cloudprovider.ca';
-      targetHelp.textContent = 'Use exactly one fully qualified domain name. Do not enter a URL path.';
-      break;
-    case 'TXT':
-      targetLabel.textContent = 'TXT value';
-      targetInput.placeholder = 'v=spf1 include:_spf.example.ca ~all';
-      targetHelp.textContent = 'Use the text value exactly as provided by the service owner.';
-      break;
-    case 'NS':
-      targetLabel.textContent = 'Delegated nameservers';
-      targetInput.placeholder = 'ns-cloud-b1.googledomains.com\nns-cloud-b2.googledomains.com\nns-cloud-b3.googledomains.com\nns-cloud-b4.googledomains.com';
-      targetInput.rows = 4;
-      targetHelp.textContent = 'Create the managed zone first and paste at least two registrar setup nameservers, one per line.';
-      break;
+  const config = {
+    A: {
+      label: 'IPv4 address',
+      hint: 'Use one or more IPv4 addresses. Put each value on a new line.',
+      rows: '2'
+    },
+    AAAA: {
+      label: 'IPv6 address',
+      hint: 'Use one or more IPv6 addresses. Put each value on a new line.',
+      rows: '2'
+    },
+    CNAME: {
+      label: 'Canonical DNS name',
+      hint: 'Use exactly one fully qualified domain name. Do not enter a URL path.',
+      rows: '2'
+    },
+    TXT: {
+      label: 'TXT value',
+      hint: 'Use the text value exactly as provided by the service owner. Quotes are added automatically if omitted.',
+      rows: '3'
+    },
+    NS: {
+      label: 'Delegated nameservers',
+      hint: 'Create the child managed zone first and paste at least two authoritative nameservers, one per line.',
+      rows: '4'
+    }
+  }[recordType];
+
+  targetInput.setAttribute('label', config.label);
+  targetInput.setAttribute('hint', config.hint);
+  targetInput.setAttribute('rows', config.rows);
+}
+
+function validateStep1() {
+  const subdomain = getFieldValue('website-name');
+  const targets = parseTargets(getFieldValue('server-ip'));
+  const ttl = Number(getFieldValue('ttl-select') || 300);
+
+  if (!subdomain) {
+    throw new Error('Enter the subdomain for this DNS request.');
+  }
+
+  if (!/^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/i.test(subdomain)) {
+    throw new Error('Subdomain can only contain letters, numbers, and hyphens, and cannot start or end with a hyphen.');
+  }
+
+  if (targets.length === 0) {
+    throw new Error('Enter at least one DNS target.');
+  }
+
+  if (formData.recordType === 'CNAME' && targets.length !== 1) {
+    throw new Error('CNAME requests must have exactly one target.');
+  }
+
+  if (formData.recordType === 'NS' && targets.length < 2) {
+    throw new Error('NS delegation requests require at least two nameservers.');
+  }
+
+  formData.subdomain = subdomain.toLowerCase();
+  formData.targets = targets;
+  formData.recordTTL = ttl;
+}
+
+function validateStep2() {
+  formData.owner = getFieldValue('team-name');
+  formData.projectName = getFieldValue('project-name');
+  formData.projectId = getFieldValue('project-id');
+  formData.sourceRepository = getFieldValue('source-repo');
+
+  if (!formData.owner) {
+    throw new Error('Enter the team or owner responsible for this record.');
+  }
+
+  if (!formData.projectName) {
+    throw new Error('Enter the project name.');
+  }
+
+  if (!formData.projectId) {
+    throw new Error('Enter the project ID. This field is required for auditability.');
+  }
+
+  if (!formData.sourceRepository) {
+    throw new Error('Enter the Azure DevOps source repository URL.');
   }
 }
 
@@ -255,51 +372,68 @@ taskOptions.forEach((button) => {
     recordFormTitle.textContent = config.title;
     recordFormDescription.textContent = config.description;
     updateInputsForRecordType(config.recordType);
+    setError(step1Error, '');
     showScreen('step1');
   });
 });
 
 step1Form.addEventListener('submit', (event) => {
   event.preventDefault();
-  if (!step1Form.reportValidity()) {
-    return;
+  try {
+    validateStep1();
+    setError(step1Error, '');
+    showScreen('step2');
+  } catch (error) {
+    setError(step1Error, error.message);
   }
-
-  formData.subdomain = document.getElementById('website-name').value.trim();
-  formData.targets = parseTargets(document.getElementById('server-ip').value);
-  formData.recordTTL = parseInt(document.getElementById('ttl-select').value, 10);
-  showScreen('step2');
 });
 
 step2Form.addEventListener('submit', async (event) => {
   event.preventDefault();
-  if (!step2Form.reportValidity()) {
+  try {
+    validateStep2();
+    setError(step2Error, '');
+  } catch (error) {
+    setError(step2Error, error.message);
     return;
   }
 
-  formData.owner = document.getElementById('team-name').value.trim();
-  formData.projectName = document.getElementById('project-name').value.trim();
-  formData.projectId = document.getElementById('project-id').value.trim() || `PROJ-${Date.now()}`;
-  formData.sourceRepository = document.getElementById('source-repo').value.trim() || 'https://dev.azure.com/EDIP-PIDE/dns-as-a-pr/_git/dns-as-a-pr';
-
   populateReviewScreen();
   showScreen('step3');
+  submitRequestBtn.disabled = true;
+  submitRequestBtn.setAttribute('disabled', '');
+  validationPanel.style.display = 'none';
+  yamlPreviewPanel.style.display = 'none';
 
   try {
     const validation = await callApi('/api/validate', generateRequestPayload());
+    lastValidation = validation;
     renderValidation(validation);
+    renderYamlPreview(validation);
     submitRequestBtn.disabled = !validation.ok;
+    if (validation.ok) {
+      submitRequestBtn.removeAttribute('disabled');
+    }
   } catch (error) {
+    lastValidation = null;
     submitRequestBtn.disabled = true;
-    showFormError(error.message);
+    submitRequestBtn.setAttribute('disabled', '');
+    showValidationError(error.message);
   }
 });
 
-step1BackBtn.addEventListener('click', () => showScreen('landing'));
-step2BackBtn.addEventListener('click', () => showScreen('step1'));
-step3BackBtn.addEventListener('click', () => showScreen('step2'));
+onGcdsAction(document.querySelector('[button-id="step1-continue-button"]'), () => step1Form.requestSubmit());
+onGcdsAction(document.querySelector('[button-id="step2-continue-button"]'), () => step2Form.requestSubmit());
+onGcdsAction(step1BackBtn, () => showScreen('landing'));
+onGcdsAction(step2BackBtn, () => showScreen('step1'));
+onGcdsAction(step3BackBtn, () => showScreen('step2'));
 
-submitRequestBtn.addEventListener('click', async () => {
+onGcdsAction(submitRequestBtn, async () => {
+  if (!lastValidation?.ok) {
+    showValidationError('Wait for automated validation to pass before submitting the request.');
+    return;
+  }
+
   try {
     showSubmittingModal();
     const response = await callApi('/api/requests', generateRequestPayload());
@@ -313,11 +447,12 @@ submitRequestBtn.addEventListener('click', async () => {
     showScreen('step4');
   } catch (error) {
     hideSubmittingModal();
-    alert(`Error submitting request: ${error.message}`);
+    showValidationError(`Error submitting request: ${error.message}`);
+    showScreen('step3');
   }
 });
 
-submitAnotherBtn.addEventListener('click', () => {
+onGcdsAction(submitAnotherBtn, () => {
   formData = {
     taskType: '',
     subdomain: '',
@@ -330,43 +465,16 @@ submitAnotherBtn.addEventListener('click', () => {
     sourceRepository: '',
     controlledBy: 'dns-as-a-pr'
   };
+  lastValidation = null;
 
-  step1Form.reset();
-  step2Form.reset();
-  document.getElementById('ttl-select').value = '300';
+  ['website-name', 'server-ip', 'team-name', 'project-name', 'project-id', 'source-repo'].forEach((id) => setFieldValue(id, ''));
+  setFieldValue('ttl-select', '300');
   validationPanel.style.display = 'none';
+  yamlPreviewPanel.style.display = 'none';
   pullRequestPanel.style.display = 'none';
   submitRequestBtn.disabled = false;
+  submitRequestBtn.removeAttribute('disabled');
   showScreen('landing');
-});
-
-document.getElementById('website-name').addEventListener('input', (event) => {
-  const value = event.target.value;
-  const isValid = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/i.test(value);
-  event.target.setCustomValidity(value && !isValid ? 'Subdomain can only contain letters, numbers, and hyphens' : '');
-});
-
-document.getElementById('server-ip').addEventListener('input', (event) => {
-  const value = event.target.value;
-  const ipPattern = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
-  const fqdnPattern = /^(?=.{1,253}$)(?!-)[A-Za-z0-9-]{1,63}(\.(?!-)[A-Za-z0-9-]{1,63})+\.?$/;
-  const targets = parseTargets(value);
-  let message = '';
-
-  if (formData.recordType === 'A' && targets.some((target) => !ipPattern.test(target))) {
-    message = 'Please enter valid IPv4 addresses only';
-  }
-  if ((formData.recordType === 'CNAME' || formData.recordType === 'NS') && targets.some((target) => !fqdnPattern.test(target))) {
-    message = 'Please enter valid fully qualified domain names only';
-  }
-  if (formData.recordType === 'CNAME' && targets.length > 1) {
-    message = 'CNAME requests can have only one target';
-  }
-  if (formData.recordType === 'NS' && value && targets.length < 2) {
-    message = 'NS delegation requests require at least two nameservers';
-  }
-
-  event.target.setCustomValidity(message);
 });
 
 showScreen('landing');
