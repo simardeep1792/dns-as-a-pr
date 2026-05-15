@@ -26,6 +26,8 @@ const step2Form = document.getElementById('step2-form');
 const step1BackBtn = document.getElementById('step1-back');
 const step2BackBtn = document.getElementById('step2-back');
 const step3BackBtn = document.getElementById('step3-back');
+const step1ContinueBtn = document.getElementById('step1-continue');
+const step2ContinueBtn = document.getElementById('step2-continue');
 const submitRequestBtn = document.getElementById('submit-request');
 const submitAnotherBtn = document.getElementById('submit-another');
 const submittingModal = document.getElementById('submittingModal');
@@ -80,7 +82,19 @@ const taskConfigs = {
 };
 
 function onGcdsAction(element, handler) {
-  element.addEventListener('gcdsClick', handler);
+  let lastHandled = 0;
+  const wrapped = (event) => {
+    event.preventDefault();
+    const now = Date.now();
+    if (now - lastHandled < 100) {
+      return;
+    }
+    lastHandled = now;
+    handler(event);
+  };
+
+  element.addEventListener('gcdsClick', wrapped);
+  element.addEventListener('click', wrapped);
 }
 
 function getFieldValue(id) {
@@ -92,6 +106,13 @@ function setFieldValue(id, value) {
   const element = document.getElementById(id);
   element.value = value;
   element.setAttribute('value', value);
+}
+
+function clearFlowMessages() {
+  setError(step1Error, '');
+  setError(step2Error, '');
+  validationPanel.style.display = 'none';
+  yamlPreviewPanel.style.display = 'none';
 }
 
 function setError(container, message) {
@@ -306,7 +327,7 @@ function updateInputsForRecordType(recordType) {
   }[recordType];
 
   targetInput.setAttribute('label', config.label);
-  targetInput.setAttribute('hint', config.hint);
+  targetInput.setAttribute('hint', `Required. ${config.hint}`);
   targetInput.setAttribute('rows', config.rows);
 }
 
@@ -372,7 +393,7 @@ taskOptions.forEach((button) => {
     recordFormTitle.textContent = config.title;
     recordFormDescription.textContent = config.description;
     updateInputsForRecordType(config.recordType);
-    setError(step1Error, '');
+    clearFlowMessages();
     showScreen('step1');
   });
 });
@@ -422,11 +443,21 @@ step2Form.addEventListener('submit', async (event) => {
   }
 });
 
-onGcdsAction(document.querySelector('[button-id="step1-continue-button"]'), () => step1Form.requestSubmit());
-onGcdsAction(document.querySelector('[button-id="step2-continue-button"]'), () => step2Form.requestSubmit());
-onGcdsAction(step1BackBtn, () => showScreen('landing'));
-onGcdsAction(step2BackBtn, () => showScreen('step1'));
-onGcdsAction(step3BackBtn, () => showScreen('step2'));
+onGcdsAction(step1ContinueBtn, () => step1Form.requestSubmit());
+onGcdsAction(step2ContinueBtn, () => step2Form.requestSubmit());
+onGcdsAction(step1BackBtn, () => {
+  setError(step1Error, '');
+  showScreen('landing');
+});
+onGcdsAction(step2BackBtn, () => {
+  setError(step2Error, '');
+  showScreen('step1');
+});
+onGcdsAction(step3BackBtn, () => {
+  validationPanel.style.display = 'none';
+  yamlPreviewPanel.style.display = 'none';
+  showScreen('step2');
+});
 
 onGcdsAction(submitRequestBtn, async () => {
   if (!lastValidation?.ok) {

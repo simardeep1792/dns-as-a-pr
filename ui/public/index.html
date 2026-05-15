@@ -88,9 +88,8 @@
               id="website-name"
               name="subdomain"
               label="Subdomain"
-              hint="Enter only the subdomain label. The parent zone .simardeep.xyz is added automatically."
-              required
-              error-message="Enter a valid subdomain."
+              hint="Required. Enter only the subdomain label. The parent zone .simardeep.xyz is added automatically."
+              validate-on="other"
               size="50">
             </gcds-input>
 
@@ -99,10 +98,9 @@
               id="server-ip"
               name="targets"
               label="IPv4 address"
-              hint="Use one or more IPv4 addresses. Put each value on a new line."
+              hint="Required. Use one or more IPv4 addresses. Put each value on a new line."
               rows="2"
-              required
-              error-message="Enter at least one target.">
+              validate-on="other">
             </gcds-textarea>
 
             <gcds-select
@@ -113,7 +111,7 @@
               hint="Use 300 seconds for testing. Use a longer value for stable production records."
               default-value="300"
               value="300"
-              required>
+              validate-on="other">
               <option value="300" selected>300 seconds</option>
               <option value="900">900 seconds</option>
               <option value="3600">3600 seconds</option>
@@ -122,7 +120,7 @@
 
             <div class="button-row">
               <gcds-button type="button" button-role="secondary" id="step1-back" button-id="step1-back-button">Back</gcds-button>
-              <gcds-button type="submit" button-role="primary" button-id="step1-continue-button">Continue</gcds-button>
+              <gcds-button type="button" button-role="primary" id="step1-continue" button-id="step1-continue-button">Continue</gcds-button>
             </div>
           </form>
         </section>
@@ -133,14 +131,14 @@
           <div id="step2-error" class="error-box" hidden></div>
 
           <form id="step2-form" novalidate>
-            <gcds-input input-id="team-name" id="team-name" name="owner" label="Team or owner" hint="Use the accountable team or service owner." required error-message="Enter the team or owner." size="50"></gcds-input>
-            <gcds-input input-id="project-name" id="project-name" name="projectName" label="Project name" hint="Use the business or service project name." required error-message="Enter the project name." size="50"></gcds-input>
-            <gcds-input input-id="project-id" id="project-id" name="projectId" label="Project ID" hint="Use the cloud, service, or internal project identifier. This is required for auditability." required error-message="Enter the project ID." size="50"></gcds-input>
-            <gcds-input input-id="source-repo" id="source-repo" name="sourceRepository" type="url" label="Source repository" hint="Use the Azure DevOps repository that owns the application or service." required error-message="Enter the Azure DevOps source repository URL." size="75"></gcds-input>
+            <gcds-input input-id="team-name" id="team-name" name="owner" label="Team or owner" hint="Required. Use the accountable team or service owner." validate-on="other" size="50"></gcds-input>
+            <gcds-input input-id="project-name" id="project-name" name="projectName" label="Project name" hint="Required. Use the business or service project name." validate-on="other" size="50"></gcds-input>
+            <gcds-input input-id="project-id" id="project-id" name="projectId" label="Project ID" hint="Required. Use the cloud, service, or internal project identifier for auditability." validate-on="other" size="50"></gcds-input>
+            <gcds-input input-id="source-repo" id="source-repo" name="sourceRepository" type="url" label="Source repository" hint="Required. Use the Azure DevOps repository that owns the application or service." validate-on="other" size="75"></gcds-input>
 
             <div class="button-row">
               <gcds-button type="button" button-role="secondary" id="step2-back" button-id="step2-back-button">Back</gcds-button>
-              <gcds-button type="submit" button-role="primary" button-id="step2-continue-button">Continue</gcds-button>
+              <gcds-button type="button" button-role="primary" id="step2-continue" button-id="step2-continue-button">Continue</gcds-button>
             </div>
           </form>
         </section>
