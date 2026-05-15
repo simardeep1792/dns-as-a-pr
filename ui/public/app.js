@@ -90,7 +90,7 @@ function showScreen(screenName) {
 
 function updateProgressBar(step) {
   const steps = {
-    step1: { number: 1, title: 'DNS record details', total: 4 },
+    step1: { number: 1, title: 'Record details', total: 4 },
     step2: { number: 2, title: 'Requester information', total: 4 },
     step3: { number: 3, title: 'Review and submit', total: 4 },
     step4: { number: 4, title: 'Request submitted', total: 4 }

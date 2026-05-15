@@ -34,9 +34,9 @@
     <main id="main-content" class="container main-layout">
       <section id="landing-screen" class="content-width">
         <p class="breadcrumb">Home / DNS as a PR</p>
-        <h1>Request a DNS change</h1>
+        <h1>DNS as a PR</h1>
         <p class="lead">
-          Use this service to create an Azure DevOps pull request for a DNS record in the managed zone.
+          Use this service to create an Azure DevOps pull request for DNS records in the managed zone.
           The service does not write directly to Cloud DNS.
         </p>
 
@@ -48,7 +48,7 @@
           </p>
         </div>
 
-        <h2>Choose the DNS record type</h2>
+        <h2>Choose the record type for the pull request</h2>
         <div class="record-options" aria-label="DNS record type">
           <button class="record-option task-option" data-task="a-record" type="button">
             <span class="record-option__type">A</span>
@@ -77,7 +77,7 @@
           <li>The request is validated by this service.</li>
           <li>The service creates an Azure DevOps branch and pull request.</li>
           <li>Azure Pipelines validate the DNS manifest.</li>
-          <li>After approval and merge, Argo CD and ExternalDNS apply the DNS change.</li>
+          <li>After approval and merge, Argo CD and ExternalDNS apply the approved record.</li>
         </ol>
       </section>
 
@@ -121,7 +121,7 @@
 
       <section id="step2-screen" class="content-width step-screen" style="display: none;">
         <h1>Requester information</h1>
-        <p class="lead">Provide ownership metadata so reviewers know who is responsible for the DNS record.</p>
+        <p class="lead">Provide ownership metadata so reviewers know who is responsible for the record in the pull request.</p>
 
         <form id="step2-form" novalidate>
           <div class="form-group">
