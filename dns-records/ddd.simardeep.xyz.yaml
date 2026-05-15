@@ -1,0 +1,20 @@
+apiVersion: externaldns.k8s.io/v1alpha1
+kind: DNSEndpoint
+metadata:
+  name: ddd-simardeep-xyz
+  namespace: dns
+  annotations:
+    simardeep.xyz/source-repository: "https://dev.azure.com/EDIP-PIDE/dns-as-a-pr/_git/dns-as-a-pr"
+    simardeep.xyz/zone-scope: "simardeep-xyz"
+  labels:
+    simardeep.xyz/controlled-by: "dns-as-a-pr"
+    simardeep.xyz/project-name: "ddd"
+    simardeep.xyz/project-id: "dd"
+    simardeep.xyz/owner: "ddd"
+spec:
+  endpoints:
+    - dnsName: "ddd.simardeep.xyz"
+      recordType: "A"
+      recordTTL: 300
+      targets:
+        - "200.99.222.1"
