@@ -28,7 +28,7 @@ Required repository permissions:
 3. Create branch
 4. Create pull request
 
-Avoid user-scoped personal tokens for shared automation.
+Configure the UI with `AZDO_SERVICE_TOKEN` from a dedicated Azure DevOps service identity. Avoid user-scoped personal tokens for shared automation.
 
 ## Pipelines
 

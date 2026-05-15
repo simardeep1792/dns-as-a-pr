@@ -32,11 +32,11 @@ spec:
               value: dns-as-a-pr
             - name: AZDO_REPOSITORY
               value: dns-as-a-pr
-            - name: AZDO_TOKEN
+            - name: AZDO_SERVICE_TOKEN
               valueFrom:
                 secretKeyRef:
                   name: dns-request-ui-secrets
-                  key: azdo-token
+                  key: azdo-service-token
           resources:
             requests:
               cpu: 50m

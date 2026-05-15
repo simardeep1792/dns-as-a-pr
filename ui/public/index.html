@@ -148,7 +148,7 @@
 
                   <div class="mb-3" id="target-input-container">
                     <label for="server-ip" class="form-label fw-semibold" id="target-label">What's your server's IP address?</label>
-                    <input type="text" class="form-control" id="server-ip" placeholder="192.168.1.100" required>
+                    <textarea class="form-control" id="server-ip" placeholder="192.168.1.100" rows="2" required></textarea>
                     <div class="form-text" id="target-help">This is where visitors will be sent (IPv4 address)</div>
                   </div>
 
@@ -261,13 +261,18 @@
                   </div>
                 </div>
 
+                <div id="validation-panel" class="alert alert-light border" style="display: none;">
+                  <h6 class="mb-2"><i class="fas fa-shield-alt me-1"></i> Automated checks</h6>
+                  <div id="validation-results"></div>
+                </div>
+
                 <div class="alert alert-info">
                   <h6><i class="fas fa-info-circle me-1"></i> What happens next?</h6>
                   <ol class="mb-0 ps-3">
-                    <li>Your request will be reviewed by our team</li>
-                    <li>If approved, changes will be applied automatically</li>
-                    <li>Your website will be live within 10-15 minutes</li>
-                    <li>You'll receive an email confirmation with details</li>
+                    <li>This tool opens an Azure DevOps pull request</li>
+                    <li>Azure Pipelines validate the DNS manifest</li>
+                    <li>After approval and merge, Argo CD and ExternalDNS apply the record</li>
+                    <li>DNS propagation normally starts within 10-15 minutes after merge</li>
                   </ol>
                 </div>
 
@@ -296,6 +301,11 @@
                 
                 <div class="alert alert-success">
                   <strong>Reference Number:</strong> <span id="request-reference" class="font-monospace"></span>
+                </div>
+
+                <div class="alert alert-info" id="pull-request-panel" style="display: none;">
+                  <strong>Azure DevOps pull request:</strong>
+                  <a id="pull-request-link" href="#" target="_blank" rel="noopener noreferrer"></a>
                 </div>
 
                 <div class="mb-4">

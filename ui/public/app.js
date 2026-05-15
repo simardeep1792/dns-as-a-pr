@@ -49,6 +49,10 @@ const reviewTeam = document.getElementById('review-team');
 const reviewProject = document.getElementById('review-project');
 const reviewProjectId = document.getElementById('review-project-id');
 const requestReference = document.getElementById('request-reference');
+const validationPanel = document.getElementById('validation-panel');
+const validationResults = document.getElementById('validation-results');
+const pullRequestPanel = document.getElementById('pull-request-panel');
+const pullRequestLink = document.getElementById('pull-request-link');
 
 // Task type configurations
 const taskConfigs = {
@@ -125,11 +129,9 @@ function updateProgressBar(step) {
 }
 
 function populateReviewScreen() {
-  const config = taskConfigs[selectedTask];
-  
   // Website details
   reviewWebsite.textContent = `${formData.subdomain}.simardeep.xyz`;
-  reviewIp.textContent = formData.targets[0] || '';
+  reviewIp.textContent = formData.targets.join(', ');
   
   // Format TTL for display
   const ttlMap = {
@@ -144,6 +146,52 @@ function populateReviewScreen() {
   reviewTeam.textContent = formData.owner || '';
   reviewProject.textContent = formData.projectName || '';
   reviewProjectId.textContent = formData.projectId || 'N/A';
+}
+
+function parseTargets(rawValue) {
+  if (formData.recordType === 'TXT') {
+    const value = rawValue.trim();
+    return value ? [value.startsWith('"') ? value : `"${value}"`] : [];
+  }
+
+  if (formData.recordType === 'CNAME') {
+    const value = rawValue.trim();
+    return value ? [value] : [];
+  }
+
+  return rawValue
+    .split(/[\n,]+/)
+    .map((value) => value.trim())
+    .filter(Boolean);
+}
+
+function renderValidation(validation) {
+  validationPanel.style.display = 'block';
+  validationPanel.className = validation.ok ? 'alert alert-success' : 'alert alert-danger';
+  validationResults.innerHTML = '';
+
+  const list = document.createElement('ul');
+  list.className = 'mb-0 ps-3';
+
+  validation.checks.forEach((check) => {
+    const item = document.createElement('li');
+    item.textContent = `${check.status.toUpperCase()}: ${check.detail}`;
+    list.appendChild(item);
+  });
+
+  (validation.warnings || []).forEach((warning) => {
+    const item = document.createElement('li');
+    item.textContent = `WARNING: ${warning}`;
+    list.appendChild(item);
+  });
+
+  validationResults.appendChild(list);
+}
+
+function showFormError(message) {
+  validationPanel.style.display = 'block';
+  validationPanel.className = 'alert alert-danger';
+  validationResults.textContent = message;
 }
 
 function generateRequestPayload() {
@@ -216,31 +264,31 @@ function updateInputsForRecordType(recordType) {
   const targetLabel = document.getElementById('target-label');
   const targetInput = document.getElementById('server-ip');
   const targetHelp = document.getElementById('target-help');
+  targetInput.value = '';
+  targetInput.removeAttribute('pattern');
+  targetInput.rows = 2;
   
   switch (recordType) {
     case 'A':
       targetLabel.textContent = "What's your server's IP address?";
       targetInput.placeholder = "192.168.1.100";
-      targetInput.pattern = "^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$";
-      targetHelp.textContent = "This is where visitors will be sent (IPv4 address)";
+      targetHelp.textContent = "Use one or more IPv4 addresses. Put each address on a new line if there are multiple targets.";
       break;
     case 'CNAME':
       targetLabel.textContent = "What domain should this redirect to?";
       targetInput.placeholder = "example.com";
-      targetInput.pattern = "^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]\\.[a-zA-Z]{2,}$";
-      targetHelp.textContent = "The domain name visitors will be redirected to";
+      targetHelp.textContent = "Use exactly one fully qualified domain name. Do not enter a URL path.";
       break;
     case 'TXT':
       targetLabel.textContent = "What text value do you want to set?";
       targetInput.placeholder = "v=spf1 include:_spf.google.com ~all";
-      targetInput.pattern = "";
       targetHelp.textContent = "Text record for verification, SPF, or other purposes";
       break;
     case 'NS':
-      targetLabel.textContent = "What nameservers should handle this domain?";
-      targetInput.placeholder = "ns1.example.com";
-      targetInput.pattern = "^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]\\.[a-zA-Z]{2,}$";
-      targetHelp.textContent = "Primary nameserver (you can add more after submission)";
+      targetLabel.textContent = "What nameservers should handle this subdomain?";
+      targetInput.placeholder = "ns-cloud-b1.googledomains.com\nns-cloud-b2.googledomains.com\nns-cloud-b3.googledomains.com\nns-cloud-b4.googledomains.com";
+      targetInput.rows = 4;
+      targetHelp.textContent = "Create the managed zone first, then paste at least two registrar setup nameservers, one per line.";
       break;
   }
 }
@@ -251,21 +299,15 @@ step1Form.addEventListener('submit', (e) => {
   
   // Collect form data
   formData.subdomain = document.getElementById('website-name').value.trim();
-  let targetValue = document.getElementById('server-ip').value.trim();
-  
-  // Handle TXT record quoting
-  if (formData.recordType === 'TXT' && targetValue && !targetValue.startsWith('"')) {
-    targetValue = `"${targetValue}"`;
-  }
-  
-  formData.targets = [targetValue];
+  const targetValue = document.getElementById('server-ip').value;
+  formData.targets = parseTargets(targetValue);
   formData.recordTTL = parseInt(document.getElementById('ttl-select').value);
   
   showScreen('step2');
 });
 
 // Step 2 form submission  
-step2Form.addEventListener('submit', (e) => {
+step2Form.addEventListener('submit', async (e) => {
   e.preventDefault();
   
   // Collect form data
@@ -276,6 +318,15 @@ step2Form.addEventListener('submit', (e) => {
   
   populateReviewScreen();
   showScreen('step3');
+
+  try {
+    const validation = await callApi('/api/validate', generateRequestPayload());
+    renderValidation(validation);
+    submitRequestBtn.disabled = !validation.ok;
+  } catch (error) {
+    submitRequestBtn.disabled = true;
+    showFormError(error.message);
+  }
 });
 
 // Navigation buttons
@@ -297,6 +348,11 @@ submitRequestBtn.addEventListener('click', async () => {
     // Generate reference number
     const reference = generateReferenceNumber();
     requestReference.textContent = reference;
+    if (response.url) {
+      pullRequestLink.href = response.url;
+      pullRequestLink.textContent = response.url;
+      pullRequestPanel.style.display = 'block';
+    }
     
     // Hide modal and show success screen
     modal.hide();
@@ -360,12 +416,24 @@ document.getElementById('website-name').addEventListener('input', (e) => {
 document.getElementById('server-ip').addEventListener('input', (e) => {
   const value = e.target.value;
   const ipPattern = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+  const fqdnPattern = /^(?=.{1,253}$)(?!-)[A-Za-z0-9-]{1,63}(\.(?!-)[A-Za-z0-9-]{1,63})+\.?$/;
+  const targets = parseTargets(value);
+  let message = '';
   
-  if (value && !ipPattern.test(value)) {
-    e.target.setCustomValidity('Please enter a valid IPv4 address');
-  } else {
-    e.target.setCustomValidity('');
+  if (formData.recordType === 'A' && targets.some((target) => !ipPattern.test(target))) {
+    message = 'Please enter valid IPv4 addresses only';
   }
+  if ((formData.recordType === 'CNAME' || formData.recordType === 'NS') && targets.some((target) => !fqdnPattern.test(target))) {
+    message = 'Please enter valid fully qualified domain names only';
+  }
+  if (formData.recordType === 'CNAME' && targets.length > 1) {
+    message = 'CNAME requests can have only one target';
+  }
+  if (formData.recordType === 'NS' && value && targets.length < 2) {
+    message = 'NS delegation requests require at least two nameservers';
+  }
+
+  e.target.setCustomValidity(message);
 });
 
 // Initialize the application

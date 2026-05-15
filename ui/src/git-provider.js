@@ -58,6 +58,7 @@ class AzureDevOpsProvider extends GitProvider {
       ...options,
       headers: {
         Authorization: this.authHeader,
+        Accept: "application/json",
         "Content-Type": "application/json",
         ...(options.headers || {})
       }
@@ -158,8 +159,22 @@ class AzureDevOpsProvider extends GitProvider {
     try {
       const response = await this.request(`/items?path=${encodeURIComponent(`/${path}`)}&versionDescriptor.versionType=branch&versionDescriptor.version=${encodeURIComponent(ref)}&includeContent=false`);
       return Boolean(response.path);
-    } catch (_error) {
-      return false;
+    } catch (error) {
+      if (!String(error.message).includes("azure devops api 404:")) {
+        throw error;
+      }
+    }
+
+    const parent = path.split("/").slice(0, -1).join("/");
+    const wanted = `/${path}`.toLowerCase();
+    try {
+      const response = await this.request(`/items?scopePath=${encodeURIComponent(`/${parent}`)}&recursionLevel=OneLevel&versionDescriptor.versionType=branch&versionDescriptor.version=${encodeURIComponent(ref)}&includeContent=false`);
+      return (response.value || []).some((item) => String(item.path || "").toLowerCase() === wanted);
+    } catch (error) {
+      if (String(error.message).includes("azure devops api 404:")) {
+        return false;
+      }
+      throw error;
     }
   }
 
@@ -228,14 +243,14 @@ class DryRunProvider extends GitProvider {
 function createProviderFromEnv() {
   const mode = process.env.GIT_PROVIDER_MODE || "dry-run";
   if (mode === "azure-devops") {
-    const token = process.env.AZDO_TOKEN;
+    const token = process.env.AZDO_SERVICE_TOKEN || process.env.AZDO_TOKEN;
     const organization = process.env.AZDO_ORGANIZATION;
     const project = process.env.AZDO_PROJECT;
     const repository = process.env.AZDO_REPOSITORY;
 
     if (!token || !organization || !project || !repository) {
       throw new Error(
-        "azure-devops mode requires AZDO_TOKEN, AZDO_ORGANIZATION, AZDO_PROJECT, AZDO_REPOSITORY"
+        "azure-devops mode requires AZDO_SERVICE_TOKEN, AZDO_ORGANIZATION, AZDO_PROJECT, AZDO_REPOSITORY"
       );
     }
 

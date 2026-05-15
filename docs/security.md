@@ -11,9 +11,9 @@ For this POC, cert-manager reuses the existing ExternalDNS Google service accoun
 
 ## Current Runtime Secrets
 
-The UI still requires an Azure DevOps token at runtime to open pull requests. That token should be:
+The UI requires `AZDO_SERVICE_TOKEN` at runtime to open pull requests. That token should be:
 
-1. Issued to a dedicated service identity.
+1. Issued to a dedicated Azure DevOps service identity.
 2. Stored in Kubernetes through a secret management path approved for the cluster.
 3. Rotated on a defined schedule.
 
