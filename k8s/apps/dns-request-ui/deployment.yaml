@@ -36,7 +36,7 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: dns-request-ui-secrets
-                  key: azdo-service-bearer-token
+                  key: azdo-service-token
           resources:
             requests:
               cpu: 50m
