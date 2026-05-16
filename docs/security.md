@@ -9,15 +9,15 @@
 
 For this POC, cert-manager reuses the existing ExternalDNS Google service account rather than introducing a second DNS-writing identity before the flow is stable.
 
-## Current Runtime Secrets
+## Current Runtime Identity
 
-The UI requires `AZDO_SERVICE_TOKEN` at runtime to open pull requests. That token should be:
+The UI requires `AZDO_SERVICE_TOKEN` at runtime to open pull requests. This value must be an Azure DevOps OAuth bearer token issued for the runtime service identity.
 
 1. Issued to a dedicated Azure DevOps service identity.
 2. Stored in Kubernetes through a secret management path approved for the cluster.
-3. Rotated on a defined schedule.
+3. Rotated or refreshed by the approved service identity flow.
 
-The runtime should not use personal access tokens tied to an individual user. Use a service identity with only the Azure Repos permissions needed to read, create branches, push request manifests, and open pull requests.
+The runtime should use only a service identity with the Azure Repos permissions needed to read, create branches, push request manifests, and open pull requests.
 
 ## Public UI Risk
 

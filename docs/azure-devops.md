@@ -28,7 +28,7 @@ Required repository permissions:
 3. Create branch
 4. Create pull request
 
-Configure the UI with `AZDO_SERVICE_TOKEN` from a dedicated Azure DevOps service identity. Do not use user-scoped personal tokens for shared automation. The UI backend no longer accepts the generic `AZDO_TOKEN` fallback because the runtime credential should be explicit and service-owned.
+Configure the UI with `AZDO_SERVICE_TOKEN` from a dedicated Azure DevOps service identity. The value must be an OAuth bearer token, and the UI backend sends it only as a bearer credential. The UI backend no longer accepts the generic `AZDO_TOKEN` fallback because the runtime credential should be explicit and service-owned.
 
 ## Pipelines
 

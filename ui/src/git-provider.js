@@ -38,8 +38,7 @@ class AzureDevOpsProvider extends GitProvider {
   }
 
   get authHeader() {
-    const raw = `:${this.token}`;
-    return `Basic ${Buffer.from(raw, "utf8").toString("base64")}`;
+    return `Bearer ${this.token}`;
   }
 
   getDestination() {

@@ -47,10 +47,65 @@ test('supports NS delegation requests with at least two nameservers', () => {
   assert.equal(req.targets.length, 2);
 });
 
+test('supports AAAA record requests with valid IPv6 targets', () => {
+  const req = normalizeRequest({
+    ...baseRequest,
+    recordType: 'AAAA',
+    targets: ['2001:db8::10']
+  });
+
+  assert.equal(req.recordType, 'AAAA');
+  assert.deepEqual(req.targets, ['2001:db8::10']);
+});
+
+test('supports CNAME record requests with one canonical DNS name', () => {
+  const req = normalizeRequest({
+    ...baseRequest,
+    recordType: 'CNAME',
+    targets: ['target.example.com']
+  });
+
+  assert.equal(req.recordType, 'CNAME');
+  assert.deepEqual(req.targets, ['target.example.com']);
+});
+
+test('supports TXT record requests with quoted values', () => {
+  const req = normalizeRequest({
+    ...baseRequest,
+    recordType: 'TXT',
+    targets: ['"google-site-verification=abc123"']
+  });
+
+  assert.equal(req.recordType, 'TXT');
+  assert.deepEqual(req.targets, ['"google-site-verification=abc123"']);
+});
+
 test('rejects NS delegation requests with one nameserver', () => {
   assert.throws(
     () => normalizeRequest({ ...baseRequest, recordType: 'NS', targets: ['ns-cloud-b1.googledomains.com'] }),
     /NS records must have at least two targets/
+  );
+});
+
+test('rejects invalid A, AAAA, CNAME, and TXT targets', () => {
+  assert.throws(
+    () => normalizeRequest({ ...baseRequest, recordType: 'A', targets: ['999.1.1.1'] }),
+    /valid IPv4 address/
+  );
+
+  assert.throws(
+    () => normalizeRequest({ ...baseRequest, recordType: 'AAAA', targets: ['not-ipv6'] }),
+    /valid IPv6 address/
+  );
+
+  assert.throws(
+    () => normalizeRequest({ ...baseRequest, recordType: 'CNAME', targets: ['bad-.example.com'] }),
+    /valid FQDN/
+  );
+
+  assert.throws(
+    () => normalizeRequest({ ...baseRequest, recordType: 'TXT', targets: ['unquoted-text'] }),
+    /wrapped in double quotes/
   );
 });
 

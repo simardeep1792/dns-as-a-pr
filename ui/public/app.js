@@ -1,5 +1,7 @@
 let selectedTask = '';
 let lastValidation = null;
+let currentScreen = 'landing';
+let submitInProgress = false;
 let formData = {
   taskType: '',
   subdomain: '',
@@ -81,6 +83,10 @@ const taskConfigs = {
   }
 };
 
+const ipv4Pattern = /^(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}$/;
+const ipv6Pattern = /^(([0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4}|([0-9A-Fa-f]{1,4}:){1,7}:|([0-9A-Fa-f]{1,4}:){1,6}:[0-9A-Fa-f]{1,4}|([0-9A-Fa-f]{1,4}:){1,5}(:[0-9A-Fa-f]{1,4}){1,2}|([0-9A-Fa-f]{1,4}:){1,4}(:[0-9A-Fa-f]{1,4}){1,3}|([0-9A-Fa-f]{1,4}:){1,3}(:[0-9A-Fa-f]{1,4}){1,4}|([0-9A-Fa-f]{1,4}:){1,2}(:[0-9A-Fa-f]{1,4}){1,5}|[0-9A-Fa-f]{1,4}:((:[0-9A-Fa-f]{1,4}){1,6})|:((:[0-9A-Fa-f]{1,4}){1,7}|:))$/;
+const allowedTtls = new Set([300, 900, 3600, 86400]);
+
 function onGcdsAction(element, handler) {
   let lastHandled = 0;
   const wrapped = (event) => {
@@ -126,6 +132,37 @@ function setError(container, message) {
   container.innerHTML = `<gcds-alert alert-role="danger" heading="There is a problem" hide-close-btn><p>${escapeHtml(message)}</p></gcds-alert>`;
 }
 
+function isWizardScreen(screenName) {
+  return ['landing', 'step1', 'step2', 'step3', 'step4'].includes(screenName);
+}
+
+function updateHistory(screenName, replace = false) {
+  if (!window.history?.pushState) {
+    return;
+  }
+
+  const state = { screen: screenName };
+  if (replace) {
+    window.history.replaceState(state, '', window.location.href);
+    return;
+  }
+
+  window.history.pushState(state, '', window.location.href);
+}
+
+function navigateToScreen(screenName, options = {}) {
+  if (!isWizardScreen(screenName)) {
+    return;
+  }
+
+  const replace = Boolean(options.replace);
+  if (replace || screenName !== currentScreen) {
+    updateHistory(screenName, replace);
+  }
+
+  showScreen(screenName);
+}
+
 function escapeHtml(value) {
   return String(value)
     .replace(/&/g, '&amp;')
@@ -136,6 +173,7 @@ function escapeHtml(value) {
 }
 
 function showScreen(screenName) {
+  currentScreen = screenName;
   [landingScreen, step1Screen, step2Screen, step3Screen, step4Screen].forEach((screen) => {
     screen.style.display = 'none';
   });
@@ -156,6 +194,16 @@ function showScreen(screenName) {
     screenMap[screenName].querySelector('gcds-heading')?.focus?.();
   }
 }
+
+window.addEventListener('popstate', (event) => {
+  const screenName = event.state?.screen;
+  if (!isWizardScreen(screenName)) {
+    showScreen('landing');
+    return;
+  }
+
+  showScreen(screenName);
+});
 
 function updateProgressBar(step) {
   const steps = {
@@ -194,7 +242,15 @@ function populateReviewScreen() {
 function parseTargets(rawValue) {
   if (formData.recordType === 'TXT') {
     const value = rawValue.trim();
-    return value ? [value.startsWith('"') ? value : `"${value}"`] : [];
+    if (!value) {
+      return [];
+    }
+
+    if (value.startsWith('"') || value.endsWith('"')) {
+      return [value];
+    }
+
+    return [`"${value}"`];
   }
 
   if (formData.recordType === 'CNAME') {
@@ -206,6 +262,58 @@ function parseTargets(rawValue) {
     .split(/[\n,]+/)
     .map((value) => value.trim())
     .filter(Boolean);
+}
+
+function isValidFqdn(value) {
+  const fqdn = value.endsWith('.') ? value.slice(0, -1) : value;
+  const labels = fqdn.split('.');
+  return fqdn.length > 0
+    && fqdn.length <= 253
+    && labels.length > 1
+    && labels.every((label) => /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?$/.test(label));
+}
+
+function validateTargetFormats(targets, rawTargetValue) {
+  if (formData.recordType === 'A') {
+    const invalid = targets.find((target) => !ipv4Pattern.test(target));
+    if (invalid) {
+      throw new Error(`Enter a valid IPv4 address. '${invalid}' is not valid for an A record.`);
+    }
+  }
+
+  if (formData.recordType === 'AAAA') {
+    const invalid = targets.find((target) => !ipv6Pattern.test(target));
+    if (invalid) {
+      throw new Error(`Enter a valid IPv6 address. '${invalid}' is not valid for an AAAA record.`);
+    }
+  }
+
+  if (formData.recordType === 'CNAME') {
+    const target = targets[0] || '';
+    if (/^https?:\/\//i.test(target) || target.includes('/')) {
+      throw new Error('CNAME target must be a DNS name, not a URL or path.');
+    }
+    if (!isValidFqdn(target)) {
+      throw new Error(`Enter a valid canonical DNS name. '${target}' is not a valid FQDN.`);
+    }
+  }
+
+  if (formData.recordType === 'NS') {
+    const invalid = targets.find((target) => !isValidFqdn(target));
+    if (invalid) {
+      throw new Error(`Enter valid authoritative nameservers. '${invalid}' is not a valid FQDN.`);
+    }
+  }
+
+  if (formData.recordType === 'TXT') {
+    if (/[\r\n]/.test(rawTargetValue.trim())) {
+      throw new Error('TXT requests must use one single-line value.');
+    }
+    const target = targets[0] || '';
+    if (!(target.startsWith('"') && target.endsWith('"')) || target.length < 2) {
+      throw new Error('TXT value must be wrapped in matching double quotes, or entered without quotes so they can be added automatically.');
+    }
+  }
 }
 
 function renderValidation(validation) {
@@ -258,6 +366,13 @@ function generateRequestPayload() {
   };
 }
 
+function generateSubmitPayload() {
+  return {
+    ...generateRequestPayload(),
+    requestBranch: lastValidation?.branch || ''
+  };
+}
+
 async function callApi(endpoint, payload) {
   const response = await fetch(endpoint, {
     method: 'POST',
@@ -265,7 +380,8 @@ async function callApi(endpoint, payload) {
     body: JSON.stringify(payload)
   });
 
-  const body = await response.json();
+  const contentType = response.headers.get('content-type') || '';
+  const body = contentType.includes('application/json') ? await response.json() : { error: await response.text() };
   if (!response.ok) {
     throw new Error(body.error || 'Request failed');
   }
@@ -333,7 +449,8 @@ function updateInputsForRecordType(recordType) {
 
 function validateStep1() {
   const subdomain = getFieldValue('website-name');
-  const targets = parseTargets(getFieldValue('server-ip'));
+  const rawTargetValue = getFieldValue('server-ip');
+  const targets = parseTargets(rawTargetValue);
   const ttl = Number(getFieldValue('ttl-select') || 300);
 
   if (!subdomain) {
@@ -355,6 +472,12 @@ function validateStep1() {
   if (formData.recordType === 'NS' && targets.length < 2) {
     throw new Error('NS delegation requests require at least two nameservers.');
   }
+
+  if (!allowedTtls.has(ttl)) {
+    throw new Error('Choose one of the available TTL values.');
+  }
+
+  validateTargetFormats(targets, rawTargetValue);
 
   formData.subdomain = subdomain.toLowerCase();
   formData.targets = targets;
@@ -394,7 +517,7 @@ taskOptions.forEach((button) => {
     recordFormDescription.textContent = config.description;
     updateInputsForRecordType(config.recordType);
     clearFlowMessages();
-    showScreen('step1');
+    navigateToScreen('step1');
   });
 });
 
@@ -403,7 +526,7 @@ step1Form.addEventListener('submit', (event) => {
   try {
     validateStep1();
     setError(step1Error, '');
-    showScreen('step2');
+    navigateToScreen('step2');
   } catch (error) {
     setError(step1Error, error.message);
   }
@@ -420,7 +543,7 @@ step2Form.addEventListener('submit', async (event) => {
   }
 
   populateReviewScreen();
-  showScreen('step3');
+  navigateToScreen('step3');
   submitRequestBtn.disabled = true;
   submitRequestBtn.setAttribute('disabled', '');
   validationPanel.style.display = 'none';
@@ -447,27 +570,34 @@ onGcdsAction(step1ContinueBtn, () => step1Form.requestSubmit());
 onGcdsAction(step2ContinueBtn, () => step2Form.requestSubmit());
 onGcdsAction(step1BackBtn, () => {
   setError(step1Error, '');
-  showScreen('landing');
+  navigateToScreen('landing', { replace: true });
 });
 onGcdsAction(step2BackBtn, () => {
   setError(step2Error, '');
-  showScreen('step1');
+  navigateToScreen('step1', { replace: true });
 });
 onGcdsAction(step3BackBtn, () => {
   validationPanel.style.display = 'none';
   yamlPreviewPanel.style.display = 'none';
-  showScreen('step2');
+  navigateToScreen('step2', { replace: true });
 });
 
 onGcdsAction(submitRequestBtn, async () => {
+  if (submitInProgress) {
+    return;
+  }
+
   if (!lastValidation?.ok) {
     showValidationError('Wait for automated validation to pass before submitting the request.');
     return;
   }
 
   try {
+    submitInProgress = true;
+    submitRequestBtn.disabled = true;
+    submitRequestBtn.setAttribute('disabled', '');
     showSubmittingModal();
-    const response = await callApi('/api/requests', generateRequestPayload());
+    const response = await callApi('/api/requests', generateSubmitPayload());
     requestReference.textContent = generateReferenceNumber();
     if (response.url) {
       pullRequestLink.href = response.url;
@@ -475,11 +605,14 @@ onGcdsAction(submitRequestBtn, async () => {
       pullRequestPanel.style.display = 'block';
     }
     hideSubmittingModal();
-    showScreen('step4');
+    navigateToScreen('step4');
   } catch (error) {
     hideSubmittingModal();
+    submitInProgress = false;
+    submitRequestBtn.disabled = false;
+    submitRequestBtn.removeAttribute('disabled');
     showValidationError(`Error submitting request: ${error.message}`);
-    showScreen('step3');
+    navigateToScreen('step3', { replace: true });
   }
 });
 
@@ -497,6 +630,7 @@ onGcdsAction(submitAnotherBtn, () => {
     controlledBy: 'dns-as-a-pr'
   };
   lastValidation = null;
+  submitInProgress = false;
 
   ['website-name', 'server-ip', 'team-name', 'project-name', 'project-id', 'source-repo'].forEach((id) => setFieldValue(id, ''));
   setFieldValue('ttl-select', '300');
@@ -505,7 +639,7 @@ onGcdsAction(submitAnotherBtn, () => {
   pullRequestPanel.style.display = 'none';
   submitRequestBtn.disabled = false;
   submitRequestBtn.removeAttribute('disabled');
-  showScreen('landing');
+  navigateToScreen('landing', { replace: true });
 });
 
-showScreen('landing');
+navigateToScreen('landing', { replace: true });
