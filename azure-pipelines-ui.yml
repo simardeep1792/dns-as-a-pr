@@ -26,7 +26,9 @@ variables:
   GAR_REGION: northamerica-northeast1
   GAR_REPOSITORY: dns-as-a-pr
   GAR_IMAGE_NAME: dns-request-ui
-  GAR_PUSH_ENABLED: 'false'
+  GAR_PUSH_ENABLED: 'true'
+  GKE_CLUSTER_NAME: dns-as-a-pr
+  GKE_CLUSTER_LOCATION: northamerica-northeast1
 
 steps:
   - checkout: self
@@ -56,15 +58,44 @@ steps:
   - bash: |
       set -euo pipefail
       if [ "$(Build.SourceBranch)" != "refs/heads/main" ] || [ "$(GAR_PUSH_ENABLED)" != "true" ]; then
-        echo "Skipping registry push"
+        echo "Skipping registry push and rollout"
         exit 0
       fi
 
-      : "${GAR_REGISTRY_USERNAME:?GAR_REGISTRY_USERNAME is required when GAR_PUSH_ENABLED=true}"
-      : "${GAR_REGISTRY_PASSWORD:?GAR_REGISTRY_PASSWORD is required when GAR_PUSH_ENABLED=true}"
+      : "${GCP_WORKLOAD_IDENTITY_PROVIDER:?GCP_WORKLOAD_IDENTITY_PROVIDER is required when GAR_PUSH_ENABLED=true}"
+      : "${GCP_DEPLOY_SERVICE_ACCOUNT:?GCP_DEPLOY_SERVICE_ACCOUNT is required when GAR_PUSH_ENABLED=true}"
+      : "${SYSTEM_ACCESSTOKEN:?System.AccessToken is required to request an Azure DevOps OIDC token}"
+      : "${SYSTEM_OIDCREQUESTURI:?System.OidcRequestUri is required to request an Azure DevOps OIDC token}"
+
+      if ! command -v gcloud >/dev/null 2>&1; then
+        curl -sSL https://sdk.cloud.google.com | bash -s -- --disable-prompts --install-dir="$HOME"
+        export PATH="$HOME/google-cloud-sdk/bin:$PATH"
+      fi
+
+      curl -fsS -H "Authorization: Bearer ${SYSTEM_ACCESSTOKEN}" \
+        "${SYSTEM_OIDCREQUESTURI}&api-version=7.1" \
+        | python3 -c 'import json,sys; print(json.load(sys.stdin)["oidcToken"])' > /tmp/ado-oidc-token
+
+      gcloud iam workload-identity-pools create-cred-config "${GCP_WORKLOAD_IDENTITY_PROVIDER}" \
+        --service-account="${GCP_DEPLOY_SERVICE_ACCOUNT}" \
+        --credential-source-file=/tmp/ado-oidc-token \
+        --output-file=/tmp/gcp-ado-creds.json
+
+      gcloud auth login --cred-file=/tmp/gcp-ado-creds.json --brief
+      gcloud config set project "$(GCP_PROJECT_ID)"
+      gcloud auth configure-docker "$(GAR_REGION)-docker.pkg.dev" --quiet
 
       IMAGE="$(GAR_REGION)-docker.pkg.dev/$(GCP_PROJECT_ID)/$(GAR_REPOSITORY)/$(GAR_IMAGE_NAME)"
-      echo "$GAR_REGISTRY_PASSWORD" | docker login -u "$GAR_REGISTRY_USERNAME" --password-stdin "https://$(GAR_REGION)-docker.pkg.dev"
       docker push "$IMAGE:$(Build.SourceVersion)"
       docker push "$IMAGE:main"
-    displayName: Push UI container image to GAR
+      gcloud container clusters get-credentials "$(GKE_CLUSTER_NAME)" \
+        --region "$(GKE_CLUSTER_LOCATION)" \
+        --project "$(GCP_PROJECT_ID)"
+      kubectl rollout restart deploy/dns-request-ui -n dns-ui
+      kubectl rollout status deploy/dns-request-ui -n dns-ui --timeout=180s
+    displayName: Publish UI image and roll deployment
+    env:
+      SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+      SYSTEM_OIDCREQUESTURI: $(System.OidcRequestUri)
+      GCP_WORKLOAD_IDENTITY_PROVIDER: $(GCP_WORKLOAD_IDENTITY_PROVIDER)
+      GCP_DEPLOY_SERVICE_ACCOUNT: $(GCP_DEPLOY_SERVICE_ACCOUNT)

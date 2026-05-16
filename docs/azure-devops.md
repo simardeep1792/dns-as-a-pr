@@ -40,3 +40,17 @@ This repo includes four Azure pipeline entrypoints:
 4. `azure-pipelines-ui.yml`
 
 The UI pipeline now validates and builds the image without relying on an Azure pipeline service connection reference in YAML. Registry push is controlled by operator-supplied variables.
+
+## UI Image Publish
+
+The UI pipeline publishes the `dns-request-ui:main` image only from `main` branch runs. It uses Azure DevOps OIDC plus Google Workload Identity Federation to impersonate a Google service account; it does not use PATs or static registry passwords.
+
+Required pipeline variables:
+
+1. `GCP_WORKLOAD_IDENTITY_PROVIDER`: Full Google Workload Identity provider resource name trusted for Azure DevOps OIDC tokens.
+2. `GCP_DEPLOY_SERVICE_ACCOUNT`: Google service account email used to push Artifact Registry images and restart the GKE deployment.
+
+Required Google permissions for that service account:
+
+1. Artifact Registry writer on `northamerica-northeast1-docker.pkg.dev/edip-aurora-fgc/dns-as-a-pr`.
+2. GKE access sufficient to run `kubectl rollout restart deploy/dns-request-ui -n dns-ui`.

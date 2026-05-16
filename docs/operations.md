@@ -30,6 +30,14 @@ kubectl -n dns-ui get ingress,service,deployment
 curl -I https://dns-ui.simardeep.xyz/
 ```
 
+UI image rollout:
+
+```bash
+kubectl -n dns-ui get deploy dns-request-ui -o wide
+kubectl -n dns-ui rollout status deploy/dns-request-ui
+gcloud artifacts docker images describe northamerica-northeast1-docker.pkg.dev/edip-aurora-fgc/dns-as-a-pr/dns-request-ui:main --project edip-aurora-fgc
+```
+
 Cloud DNS:
 
 ```bash
