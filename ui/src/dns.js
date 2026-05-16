@@ -1,8 +1,6 @@
 const RECORD_TYPES = new Set(["A", "AAAA", "CNAME", "TXT", "NS"]);
 const IPV4_PATTERN = /^(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}$/;
 const IPV6_PATTERN = /^(([0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4}|([0-9A-Fa-f]{1,4}:){1,7}:|([0-9A-Fa-f]{1,4}:){1,6}:[0-9A-Fa-f]{1,4}|([0-9A-Fa-f]{1,4}:){1,5}(:[0-9A-Fa-f]{1,4}){1,2}|([0-9A-Fa-f]{1,4}:){1,4}(:[0-9A-Fa-f]{1,4}){1,3}|([0-9A-Fa-f]{1,4}:){1,3}(:[0-9A-Fa-f]{1,4}){1,4}|([0-9A-Fa-f]{1,4}:){1,2}(:[0-9A-Fa-f]{1,4}){1,5}|[0-9A-Fa-f]{1,4}:((:[0-9A-Fa-f]{1,4}){1,6})|:((:[0-9A-Fa-f]{1,4}){1,7}|:))$/;
-const FQDN_PATTERN = /^(?=.{1,253}$)(?!-)[A-Za-z0-9-]{1,63}(\.(?!-)[A-Za-z0-9-]{1,63})+\.?$/;
-
 function ensureSafeSingleLine(value, fieldName) {
   if (!value) {
     return value;
@@ -37,7 +35,12 @@ function isLikelyHttpUrl(value) {
 }
 
 function isValidFqdn(value) {
-  return FQDN_PATTERN.test(value);
+  const fqdn = value.endsWith(".") ? value.slice(0, -1) : value;
+  const labels = fqdn.split(".");
+  return fqdn.length > 0
+    && fqdn.length <= 253
+    && labels.length > 1
+    && labels.every((label) => /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?$/.test(label));
 }
 
 function validateTargets(recordType, targets) {
@@ -199,8 +202,9 @@ function filePathFor(subdomain) {
 }
 
 function branchNameFor(subdomain) {
-  const stamp = new Date().toISOString().replace(/[-:TZ.]/g, "").slice(0, 14);
-  return `dns-request/${subdomain}-${stamp}`;
+  const stamp = new Date().toISOString().replace(/[-:TZ.]/g, "").slice(0, 17);
+  const suffix = Math.random().toString(36).slice(2, 8);
+  return `dns-request/${subdomain}-${stamp}-${suffix}`;
 }
 
 function renderYaml(req) {
