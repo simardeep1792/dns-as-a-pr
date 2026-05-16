@@ -73,7 +73,7 @@ steps:
       fi
 
       curl -fsS -H "Authorization: Bearer ${SYSTEM_ACCESSTOKEN}" \
-        "${SYSTEM_OIDCREQUESTURI}&api-version=7.1" \
+        "${SYSTEM_OIDCREQUESTURI}&api-version=7.1-preview.1" \
         | python3 -c 'import json,sys; print(json.load(sys.stdin)["oidcToken"])' > /tmp/ado-oidc-token
 
       gcloud iam workload-identity-pools create-cred-config "${GCP_WORKLOAD_IDENTITY_PROVIDER}" \

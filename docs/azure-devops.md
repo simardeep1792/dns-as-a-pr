@@ -45,6 +45,8 @@ The UI pipeline now validates and builds the image without relying on an Azure p
 
 The UI pipeline publishes the `dns-request-ui:main` image only from `main` branch runs. It uses Azure DevOps OIDC plus Google Workload Identity Federation to impersonate a Google service account; it does not use PATs or static registry passwords.
 
+The Azure DevOps OIDC request uses the `7.1-preview.1` API version required by `System.OidcRequestUri`.
+
 Required pipeline variables:
 
 1. `GCP_WORKLOAD_IDENTITY_PROVIDER`: Full Google Workload Identity provider resource name trusted for Azure DevOps OIDC tokens.
